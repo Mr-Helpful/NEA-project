@@ -201,7 +201,11 @@ class Tree():
     # setting CurNode and starter to 0 is used as a flag that these need to be updated
     # this is required as they can't be defaulted to a value relating to self as this hasn't been recognised yet
     def print_tree(self,CurNode = 0,starter = 0):
+
+        # if CurNode is 0
         # updates CurNode to the correct value
+        # used as self is defined in the parameters
+        # and therefore cannot be used in default values
         if(CurNode == 0):
             CurNode = self._rootNode
 
@@ -223,9 +227,9 @@ class Trie(Tree):
         EOW = ")"
 
         def find_child(self,node,char):
-            # firstly defines charCheck as the EOW character
+            # firstly defines charCheck as False
             # this will remain the value of charcheck if it fails to find the relevant node
-            charCheck = self.EOW
+            charCheck = False
 
             # iterates over the current node's children
             for Cnode in node.children:
@@ -234,7 +238,8 @@ class Trie(Tree):
                 if(Cnode.value == char):
 
                     # if so it updates the value of charCheck to the node conataining this character
-                    charCheck = Cnode
+                    # it is formatted as a list for ease of use later
+                    charCheck = [Cnode]
 
             # if the value is blank it returns all of the children
             if(char == "."):
@@ -257,10 +262,10 @@ class Trie(Tree):
 
                 charCheck = self.find_child(root,char)
 
-                # checks whether a node already exists for the correct letter
-                if(charCheck == self.EOW):
+                # checks whether a node doesn't exist for the correct letter
+                if(not(charCheck)):
 
-                    # if no Tree objects already exist, it creates a new Tree object to store the word
+                    # if no node object exists, it creates a new node object to store the word
                     newNode = Node(char)
                     root.children.append(newNode)
                     root = newNode
@@ -269,7 +274,7 @@ class Trie(Tree):
                     # otherwise it will just navigate down that node
                     root = charCheck
             endNode = Node(self.EOW)
-            root.add_child(endNode)
+            root.children.append(endNode)
 
         # allows for storage of a list of words at once
         def store_words(self,words):
@@ -296,7 +301,7 @@ class Trie(Tree):
         # and returned at the end
         # string is defaulted to empty upon initialisation
         # seperate solutions are then built up as string is passed down through the trie
-        def fit_Row(self,row,node = 0,hand = ".......",solutions = [],string = ""):
+        def fit_Row(self,row,hand = ".......",node = 0,solutions = [],string = ""):
 
             # needed to set up the root node for the fitting of the row
             if(node == 0):
@@ -312,7 +317,7 @@ class Trie(Tree):
 
             # another base case
             # if it reaches the end of a word
-            if(self._value==self.EOW):
+            if(self.value==self.EOW):
                 print("solution found!")
 
                 # it will add the word to the list of found solutions
@@ -326,45 +331,41 @@ class Trie(Tree):
             # cuts the first character off the row
             row = row[1:]
 
-            # initially there are no solutions as to the next character to pick
-            matches = {}
+            # only executes if the next space is blank
+            if(nextChar == "."):
 
-            # checks if a word hasn't been started yet
-            # this can be checked by looking at the node the tree is currently on
-            # this is due to recursive nature of the word search
-            if(Node == self._rootNode):
+                # if a word has not been started yet the tree is still on the root node
+                if(Node == self._rootNode):
 
-                # just navigates down the branch of the correct word
-                # if the next character in the row is a '.' then it just adds all the nodes available
-                # each match represents a node which it can navigate down
-                matches.add(self.find_child(Node,nextChar))
-
-            # only executes if it is not on the very start of the tree
-            else:
+                    # the word can be shifted across without playing anything
+                    solutions.extend(self.fit_Row(row, hand, Node, solutions, string + Node.value))
 
                 # goes over every tile in the hand
                 # i.e. the tiles that can be played
                 for char in hand:
 
-                    # first checks if the next tile is blank
-                    # this allows any tile from the hand to be played
-                    if(nextChar == "."):
+                    # adds the next character from the hand
+                    # as it doesn't matter what character this is
+                    matches = self.find_child(Node,char)
 
-                        # adds the next character from the hand
-                        # as it doesn't matter what character this is
-                        matches.add(self.find_child(Node,char))
+                    # goes over every item in matches
+                    # this may be multiple matches in the case of a blank tile
+                    for match in matches:
+                        solutions.extend(self.fit_Row(row, hand.replace(char,"",count = 1), match, solutions, string + Node.value))
 
-                    # if the first check is failed
-                    # then it checks whether it is possible to play a blank tile
-                    elif(char == "."):
+            # if the space in the row isn't blank, it must be a letter tile
+            else:
 
-                        # adds the next tile from the row as a blank can be played on anything
-                        matches.add(self.find_child(Node,nextChar))
+                # there will only ever be one result from a letter char
+                # it will either be an EOW character or
+                match = self.find_child(Node,nextChar)
 
-            # goes through each match and executes itself on it
-            # uses an updated node and current string
-            for match in matches:
-                solutions.extend(match.fit_Row(row,match,hand,solutions,string + Node.value))
+                # if find_child returns an answer that is not false it has found a valid branch
+                if(match):
+
+                    # therefore it just navigates down the node without playing anything
+                    # as if a tile would be played from the hand it would be like overlapping them on the board
+                    solutions.extend(self.fit_Row(row, hand, match, solutions, string + Node.value))
 
             # returns solutions after all the base cases are met for the previous layer
             return(solutions)
@@ -487,12 +488,6 @@ file handling
 --------------------------------------------------
 '''
 
-# retrieves the board from the called fileName: in this case, "Scrabble_Board"
-def get_entries(fileName):
-    r = open(fileName,"r")                      # opens a readable file object
-    lines = r.read().splitlines()               # avoids the "\n" character being used
-    return(lines)
-
 # overwrites the board from the file called fileName. Uses the newFile list.
 def write_file(newFile,fileName):
     w = open(fileName,"w")                      # opens the file object
@@ -501,10 +496,9 @@ def write_file(newFile,fileName):
 
 # gets the dictionary from the dictionary file
 def retrieve_dictionary(dictFile):
-    with open(dictFile,"r") as r:            # opens the dictfile for reading
-        dictionary = r.read().splitlines()
+    with open(dictFile,"rb") as r:            # opens the dictfile for reading
+        dictionary = pickle.load(r)
     return(dictionary)
-
 
 '''
 file related methods
