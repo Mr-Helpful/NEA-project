@@ -311,19 +311,20 @@ class Trie(Tree):
 
             while(len(PSolutions) != 0):
 
-                nextItem = PSolutions[0]
+                NextItem = PSolutions[0]
 
-                Row = nextItem[0]
+                Row = NextItem[0]
 
                 NextChar = Row[0]
 
-                Hand = nextItem[1]
+                Hand = NextItem[1]
 
-                Node = nextItem[2]
+                Node = NextItem[2]
 
-                String = nextItem[3]
+                String = NextItem[3]
+                print(String)
 
-                if(len(row) != 0 and len(hand) != 0):
+                if(len(Row) != 0 and len(Hand) != 0):
 
                     if(Node.value == self.EOW):
 
@@ -339,28 +340,28 @@ class Trie(Tree):
                             # the word can be shifted across without playing anything
                             PSolutions.append([Row[1:],Hand,Node,String + Node.value])
 
-                        # goes over every tile in the hand
-                        # i.e. the tiles that can be played
-                        for char in Hand:
+                            # goes over every tile in the hand
+                            # i.e. the tiles that can be played
+                            for char in Hand:
 
-                            # adds the next character from the hand
-                            # as it doesn't matter what character this is
-                            matches = self.find_child(Node,char)
+                                # adds the next character from the hand
+                                # as it doesn't matter what character this is
+                                matches = self.find_child(Node,char)
 
-                            # tests if there are matches on the tree
-                            if(matches):
+                                # tests if there are matches on the tree
+                                if(matches):
 
-                                # if there are goes over every item in matches
-                                # this may be multiple matches in the case of a blank tile
-                                for match in matches:
-                                    PSolutions.append([Row[1:],Hand.replace(char,"",1),match,String + Node.value])
+                                    # if there are goes over every item in matches
+                                    # this may be multiple matches in the case of a blank tile
+                                    for match in matches:
+                                        PSolutions.append([Row[1:],Hand.replace(char,"",1),match,String + Node.value])
 
                     # if the space in the row isn't blank, it must be a letter tile
                     else:
 
                         # there will only ever be one result from a letter char
                         # it will either be an EOW character or
-                        match = self.find_child(Node,nextChar)
+                        match = self.find_child(Node,NextChar)
 
                         # if find_child returns an answer that is not false it has found a valid branch
                         if(match):
@@ -369,9 +370,10 @@ class Trie(Tree):
                             # as if a tile would be played from the hand it would be like overlapping them on the board
                             PSolutions.append([Row[1:],Hand,match,String + Node.value])
 
+                PSolutions.remove(NextItem)
 
             # returns solutions
-            return(solutions)
+            return(Solutions)
 
 # defines a new player
 # will be initialised for every new player and for an AI

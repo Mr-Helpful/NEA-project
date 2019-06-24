@@ -1,7 +1,8 @@
 import time
 from Scrabble import *
+import os
 
-
+filePrefix = os.getcwd() + "/"
 fileName = filePrefix + files[0]
 print(fileName)
 dictFile = "DictTree"
