@@ -144,7 +144,7 @@ global dictFile
 dictFile = "Scrabble_Dictionary(crucial)"
 
 '''
-Definitions of objects
+Definitions of classes
 ==================================================
 '''
 
@@ -192,7 +192,7 @@ class Tree():
     def __init__(self):
 
         # defines the root Node of the tree as a Node with value ""
-        self._rootNode = Node("")
+        self._rootNode = Node(".")
 
     # prints the entire trie connected to the node from which this method is called
     # mostly used for debug version
@@ -322,14 +322,50 @@ class Trie(Tree):
             # can be a "." which indicates a blank tile upon which any tile can be played
             nextChar = row[0]
 
-            # cuts off the first character of row
+            # cuts the first character off the row
             row = row[1:]
 
-            matches
+            # initially there are no solutions as to the next character to pick
+            matches = {}
 
-            if(nextChar != "."):
+            # checks if a word hasn't been started yet
+            # this can be checked by looking at the node the tree is currently on
+            # this is due to recursive nature of the word search
+            if(Node == self._rootNode):
+
+                # just navigates down the branch of the correct word
+                # if the next character in the row is a '.' then it just adds all the nodes available
+                # each match represents a node which it can navigate down
+                matches.add(self.find_child(Node,nextChar))
+
+            # only executes if it is not on the very start of the tree
+            else:
+
+                # goes over every tile in the hand
+                # i.e. the tiles that can be played
+                for char in hand:
+
+                    # first checks if the next tile is blank
+                    # this allows any tile from the hand to be played
+                    if(nextChar == "."):
+
+                        # adds the next character from the hand
+                        # as it doesn't matter what character this is
+                        matches.add(self.find_child(Node,char))
+
+                    # if the first check is failed
+                    # then it checks whether it is possible to play a blank tile
+                    elif(char == "."):
+
+                        # adds the next tile from the row as a blank can be played on anything
+                        matches.add(self.find_child(Node,nextChar))
+
+            # goes through each match and executes itself on it
+            # uses an updated node and current string
+            for match in matches:
                 solutions.extend(match.fit_Row(row,match,hand,solutions,string + Node.value))
 
+            # returns solutions after all the base cases are met for the previous layer
             return(solutions)
 
 # defines a new player
@@ -652,62 +688,3 @@ menuOptions = {
                             "Change username" : change_name,
                             "Quit the program" : quit
               }
-'''
-Testing
-==================================================
-'''
-
-'''
-fileName = filePrefix + files[0]
-print(fileName)
-dictionary = filePrefix + dictFile
-
-lines = get_entries(fileName)
-
-print("retrieving dictionary")
-timeR1 = time.time()
-dictionary = retrieve_dictionary(dictionary)
-timeR2 = time.time()
-print("done in {:.5f} seconds\n".format(timeR2-timeR1))
-
-rootNode = Trie()
-
-print("converting dictionary into a Trie")
-timeT1 = time.time()
-rootNode.store_words(dictionary)
-# adds a self referential pointer to the root Tree object
-# this allows for words to be found at any point in a row
-rootNode.add_child(rootNode)
-timeT2 = time.time()
-print("done in {} seconds\n".format(timeT2-timeT1))
-
-pattern = "..............."
-hand = ""
-hand = pick_tiles(hand)
-
-print("")
-print("find_words checking for " + pattern)
-print("with a hand of " + hand)
-timeM1 = time.time()
-allMatches = rootNode.fit_Row(pattern,hand)
-timeM2 = time.time()
-print("{} matches found in {:.5f} seconds\n".format(len(allMatches),timeM2-timeM1))
-
-row = pattern
-
-print("finding the best possible play from matches")
-timeX1 = time.time()
-bestMatch = check_max_play(allMatches,row,pattern)
-timeX2 = time.time()
-print("The best match is {} with {} points scored after {:.5f} seconds\n".format(bestMatch[0],bestMatch[1],timeX2-timeX1))
-
-print("checking split_pattern functionality\n")
-splitPattern(pattern)
-
-print("")
-print("creating a new user")
-player1 = Player("Edward")
-password = "this_is_my_password"                    # of course wouldn't be physically included in the actual code
-print("finding hash for {} with user {}".format(password,player1.get_name()))
-player1.check_admin(password)
-'''
