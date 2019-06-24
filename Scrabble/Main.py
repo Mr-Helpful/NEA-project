@@ -239,7 +239,7 @@ class Trie(Tree):
 
                     # if so it updates the value of charCheck to the node conataining this character
                     # it is formatted as a list for ease of use later
-                    charCheck = [Cnode]
+                    charCheck = Cnode
 
             # if the value is blank it returns all of the children
             if(char == "."):
@@ -301,73 +301,76 @@ class Trie(Tree):
         # and returned at the end
         # string is defaulted to empty upon initialisation
         # seperate solutions are then built up as string is passed down through the trie
-        def fit_Row(self,row,hand = ".......",node = 0,solutions = [],string = ""):
+        def fit_Row(self, Row, Hand = ".E.AR..", StartString = ""):
 
-            # needed to set up the root node for the fitting of the row
-            if(node == 0):
-                node = self._rootNode
+            Node = self._rootNode
 
-            # base case when the end of the row is reached
-            # needed as no words can extend beyond this point
-            if(len(row)==0):
+            PSolutions = [[Row,Hand,Node,StartString]]
 
-                # returns solutions without adding anything
-                # by returning, it skips all the rest of the function
-                return(solutions)
+            Solutions = []
 
-            # another base case
-            # if it reaches the end of a word
-            if(self.value==self.EOW):
-                print("solution found!")
+            while(len(PSolutions) != 0):
 
-                # it will add the word to the list of found solutions
-                # and return the list of solutions
-                return(solutions.append(string))
+                nextItem = PSolutions[0]
 
-            # gets the next character to play from the first of the row
-            # can be a "." which indicates a blank tile upon which any tile can be played
-            nextChar = row[0]
+                Row = nextItem[0]
 
-            # cuts the first character off the row
-            row = row[1:]
+                NextChar = Row[0]
 
-            # only executes if the next space is blank
-            if(nextChar == "."):
+                Hand = nextItem[1]
 
-                # if a word has not been started yet the tree is still on the root node
-                if(Node == self._rootNode):
+                Node = nextItem[2]
 
-                    # the word can be shifted across without playing anything
-                    solutions.extend(self.fit_Row(row, hand, Node, solutions, string + Node.value))
+                String = nextItem[3]
 
-                # goes over every tile in the hand
-                # i.e. the tiles that can be played
-                for char in hand:
+                if(len(row) != 0 and len(hand) != 0):
 
-                    # adds the next character from the hand
-                    # as it doesn't matter what character this is
-                    matches = self.find_child(Node,char)
+                    if(Node.value == self.EOW):
 
-                    # goes over every item in matches
-                    # this may be multiple matches in the case of a blank tile
-                    for match in matches:
-                        solutions.extend(self.fit_Row(row, hand.replace(char,"",count = 1), match, solutions, string + Node.value))
+                        print("Solution Found!")
 
-            # if the space in the row isn't blank, it must be a letter tile
-            else:
+                        Solutions.append(String)
 
-                # there will only ever be one result from a letter char
-                # it will either be an EOW character or
-                match = self.find_child(Node,nextChar)
+                    if(NextChar == "."):
 
-                # if find_child returns an answer that is not false it has found a valid branch
-                if(match):
+                        # if a word has not been started yet the tree is still on the root node
+                        if(Node == self._rootNode):
 
-                    # therefore it just navigates down the node without playing anything
-                    # as if a tile would be played from the hand it would be like overlapping them on the board
-                    solutions.extend(self.fit_Row(row, hand, match, solutions, string + Node.value))
+                            # the word can be shifted across without playing anything
+                            PSolutions.append([Row[1:],Hand,Node,String + Node.value])
 
-            # returns solutions after all the base cases are met for the previous layer
+                        # goes over every tile in the hand
+                        # i.e. the tiles that can be played
+                        for char in Hand:
+
+                            # adds the next character from the hand
+                            # as it doesn't matter what character this is
+                            matches = self.find_child(Node,char)
+
+                            # tests if there are matches on the tree
+                            if(matches):
+
+                                # if there are goes over every item in matches
+                                # this may be multiple matches in the case of a blank tile
+                                for match in matches:
+                                    PSolutions.append([Row[1:],Hand.replace(char,"",1),match,String + Node.value])
+
+                    # if the space in the row isn't blank, it must be a letter tile
+                    else:
+
+                        # there will only ever be one result from a letter char
+                        # it will either be an EOW character or
+                        match = self.find_child(Node,nextChar)
+
+                        # if find_child returns an answer that is not false it has found a valid branch
+                        if(match):
+
+                            # therefore it just navigates down the node without playing anything
+                            # as if a tile would be played from the hand it would be like overlapping them on the board
+                            PSolutions.append([Row[1:],Hand,match,String + Node.value])
+
+
+            # returns solutions
             return(solutions)
 
 # defines a new player
@@ -496,6 +499,7 @@ def write_file(newFile,fileName):
 
 # gets the dictionary from the dictionary file
 def retrieve_dictionary(dictFile):
+    print(dictFile)
     with open(dictFile,"rb") as r:            # opens the dictfile for reading
         dictionary = pickle.load(r)
     return(dictionary)

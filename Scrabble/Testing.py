@@ -4,7 +4,9 @@ from Scrabble import *
 
 fileName = filePrefix + files[0]
 print(fileName)
+dictFile = "DictTree"
 dictionary = filePrefix + dictFile
+print(dictionary)
 
 '''
 lines = get_entries(fileName)
@@ -62,3 +64,6 @@ rootNode = dictionary._rootNode
 rootNode = dictionary.find_child(rootNode,"x")
 rootNode = dictionary.find_child(rootNode,"u")
 dictionary.print_tree(CurNode=rootNode)
+
+solutions = dictionary.fit_Row(row = "....e...r.q....")
+print(solutions)
