@@ -1,7 +1,7 @@
 import time
-import Scrabble as Sc
+from Scrabble import *
 
-
+'''
 fileName = filePrefix + files[0]
 print(fileName)
 dictionary = filePrefix + dictFile
@@ -54,3 +54,10 @@ player1 = Player("Edward")
 password = "this_is_my_password"                    # of course wouldn't be physically included in the actual code
 print("finding hash for {} with user {}".format(password,player1.get_name()))
 player1.check_admin(password)
+'''
+
+dictionary = retrieve_dictionary()
+rootNode = dictionary._rootNode
+rootNode = dictionary.find_child(rootNode,"x")
+rootNode = dictionary.find_child(rootNode,"u")
+dictionary.print_tree(CurNode=rootNode)

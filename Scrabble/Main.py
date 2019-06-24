@@ -228,14 +228,15 @@ class Trie(Tree):
             charCheck = self.EOW
 
             # iterates over the current node's children
-            for node in root.children:
+            for Cnode in node.children:
 
                 # checks if the value of the node fits the character being searched for
-                if(node.value == char):
+                if(Cnode.value == char):
 
                     # if so it updates the value of charCheck to the node conataining this character
-                    charCheck = node
+                    charCheck = Cnode
 
+            # if the value is blank it returns all of the children
             if(char == "."):
                 return(node.children)
 
@@ -261,13 +262,13 @@ class Trie(Tree):
 
                     # if no Tree objects already exist, it creates a new Tree object to store the word
                     newNode = Node(char)
-                    root.add_child(newNode)
+                    root.children.append(newNode)
                     root = newNode
                 else:
 
                     # otherwise it will just navigate down that node
                     root = charCheck
-            endNode = Trie(self.EOW)
+            endNode = Node(self.EOW)
             root.add_child(endNode)
 
         # allows for storage of a list of words at once
@@ -688,3 +689,6 @@ menuOptions = {
                             "Change username" : change_name,
                             "Quit the program" : quit
               }
+
+if(__name__ == "__main__"):
+    print("parsed successfully")
