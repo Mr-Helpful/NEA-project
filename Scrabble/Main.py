@@ -239,7 +239,7 @@ class Trie(Tree):
 
                     # if so it updates the value of charCheck to the node conataining this character
                     # it is formatted as a list for ease of use later
-                    charCheck = Cnode
+                    charCheck = [Cnode]
 
             # if the value is blank it returns all of the children
             if(char == "."):
@@ -272,7 +272,7 @@ class Trie(Tree):
                 else:
 
                     # otherwise it will just navigate down that node
-                    root = charCheck
+                    root = charCheck[0]
             endNode = Node(self.EOW)
             root.children.append(endNode)
 
@@ -301,7 +301,7 @@ class Trie(Tree):
         # and returned at the end
         # string is defaulted to empty upon initialisation
         # seperate solutions are then built up as string is passed down through the trie
-        def fit_Row(self, Row, Hand = ".E.AR..", StartString = ""):
+        def fit_Row(self, Row, Hand = ".e.ar..", StartString = ""):
 
             Node = self._rootNode
 
@@ -315,6 +315,8 @@ class Trie(Tree):
 
                 Row = NextItem[0]
 
+                print(NextItem)
+
                 NextChar = Row[0]
 
                 Hand = NextItem[1]
@@ -322,7 +324,6 @@ class Trie(Tree):
                 Node = NextItem[2]
 
                 String = NextItem[3]
-                print(String)
 
                 if(len(Row) != 0 and len(Hand) != 0):
 
@@ -371,6 +372,8 @@ class Trie(Tree):
                             PSolutions.append([Row[1:],Hand,match,String + Node.value])
 
                 PSolutions.remove(NextItem)
+
+                time.sleep(0.5)
 
             # returns solutions
             return(Solutions)
