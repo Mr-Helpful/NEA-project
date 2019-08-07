@@ -63,13 +63,13 @@ player1.check_admin(password)
 
 dictionary = retrieve_dictionary(dictionary)
 rootNode = dictionary._rootNode
-rootNode = dictionary.find_child(rootNode,"x")
-rootNode = dictionary.find_child(rootNode,"u")
+rootNode = dictionary.find_child(rootNode,"x")[0]
+rootNode = dictionary.find_child(rootNode,"u")[0]
 dictionary.print_tree(CurNode=rootNode)
 
 print("Done1")
 
-solutions = dictionary.fit_Row(Row = "....e...r.q....".upper())
+solutions = dictionary.fit_Row(Row = "....e...r.q....")
 print(solutions)
 
 print("Done2")

@@ -5,26 +5,36 @@ improvements:
   - and also allows it to take into consideration the players hand
  - used os to find the path of the current directory
   - this allows it to find all of the neccessary resources for execution
+ - make a Trie class, which inherits from a Tree class (needed as it is also used for minimaxing)
+ - Use a trie for lookup
 '''
 
 '''
+(>) definite steps
+(?) tentative steps
+
 This is code for a scrabble game.
 It has a somewhat simplified AI opponent, which can only play one word per turn
 Improvements still to make:
-> make a Trie class, which inherits from a Tree class (needed as it is also used for minimaxing)
+> Use official English SOWPODS list for dictionary file
 > create a "game" object for each new game
 > Improve the AI of the opponent
  > Update the function for finding all plays in a row
-  > create a seperate trie for the players current hand
-  > And then intersect it with the main word trie
  > When minimaxing, use a tree format to save on recomputing the possible plays every time the opposing player makes a move
- > Make a function for finding all the playable rows
+  > Use heuristics from determining the "likelihood" of a branch becoming the best possible play and, if below a threshold (say 2%) discard the branch
+   > Use the values of the best possible play in a game of scrabble: 1687 (very unlikely to occur) and the worst possible play: 2 (assuming letters can be re-played)
  > Make a function for checking the score of a play
- > Use a trie for lookup
+ > Make a function for finding all the playable rows
  > add weights for moves
   > playing a common letter on a double/triple word score is weighted lower
   > getting rid of an uncommon letter is ranked higher
    > use the score of the letter to judge this
+  > add a HEAVY weight on getting rid of all tiles in the rack
+   > use a depth first search algorithm on the trie of words
+    ? may create a bias towards playing words at the start of the dictionary
+    ? instead use a breadth first search with longest words first
+    ? perhaps order the dictionary by longest words first when producing a dictionary trie
+  > use an iterative method and pause after a certain number of searches has been made
 > Keep the board when the user chooses to save
 > Create a function for playing an old file
  > Create a function for getting all used files
@@ -352,14 +362,14 @@ class Trie(Tree):
                                 # tests if there are matches on the tree
                                 if(matches):
 
-                                    if(type(matches) == 'list'):
+                                    try:
 
                                         # if there are goes over every item in matches
                                         # this may be multiple matches in the case of a blank tile
                                         for match in matches:
                                             PSolutions.append([Row[1:],Hand.replace(char,"",1),match,String + Node.value])
 
-                                    else:
+                                    except:
                                         PSolutions.append([Row[1:],Hand.replace(char,"",1),matches,String + Node.value])
 
                     # if the space in the row isn't blank, it must be a letter tile
