@@ -5,6 +5,7 @@ This allows it to be more compact and allow for faster searching
 
 class dictionary:
     def __init__(self):
+        Trie = self._retrive_dict()
         pass
 
     def _retrive_dict(self):
@@ -13,7 +14,7 @@ class dictionary:
         wordCheck = self._check_for_words()
         if(trieCheck):
             self._read_trie(trieCheck)
-        elif:
+        elif(wordCheck):
             self._convert_words(wordCheck)
         else:
             raise Exception("No dictionary found upon initialisation")

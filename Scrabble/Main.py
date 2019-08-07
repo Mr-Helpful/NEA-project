@@ -283,6 +283,8 @@ class Trie(Tree):
             for word in words:
                 self.store_word(word)
 
+        # retrieves all the words stored underneath a node
+        # and adds them to the string specified in the parameters
         def retrieve_words(self,node = 0,string = ""):
             if(node == 0):
                 node = self._rootNode

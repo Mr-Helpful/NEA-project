@@ -8,3 +8,6 @@ class GUI:
     def MVP(self):
         # code for text based AI
         pass
+
+    def full(self):
+        # code for the final GUI
