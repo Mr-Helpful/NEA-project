@@ -7,6 +7,7 @@ fileName = filePrefix + files[0]
 print(fileName)
 dictFile = "DictTree"
 dictionary = filePrefix + dictFile
+dictionary = "/Users/acolby/OneDrive - The Perse School/NEA/Code/Scrabble checker/DictTree"
 print(dictionary)
 
 '''
@@ -66,5 +67,9 @@ rootNode = dictionary.find_child(rootNode,"x")
 rootNode = dictionary.find_child(rootNode,"u")
 dictionary.print_tree(CurNode=rootNode)
 
-solutions = dictionary.fit_Row(row = "....e...r.q....")
+print("Done1")
+
+solutions = dictionary.fit_Row(Row = "....e...r.q....".upper())
 print(solutions)
+
+print("Done2")

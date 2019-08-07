@@ -239,7 +239,7 @@ class Trie(Tree):
 
                     # if so it updates the value of charCheck to the node conataining this character
                     # it is formatted as a list for ease of use later
-                    charCheck = [Cnode]
+                    charCheck = Cnode
 
             # if the value is blank it returns all of the children
             if(char == "."):
@@ -272,7 +272,7 @@ class Trie(Tree):
                 else:
 
                     # otherwise it will just navigate down that node
-                    root = charCheck[0]
+                    root = charCheck
             endNode = Node(self.EOW)
             root.children.append(endNode)
 
@@ -283,8 +283,6 @@ class Trie(Tree):
             for word in words:
                 self.store_word(word)
 
-        # retrieves all the words stored underneath a node
-        # and adds them to the string specified in the parameters
         def retrieve_words(self,node = 0,string = ""):
             if(node == 0):
                 node = self._rootNode
@@ -354,10 +352,15 @@ class Trie(Tree):
                                 # tests if there are matches on the tree
                                 if(matches):
 
-                                    # if there are goes over every item in matches
-                                    # this may be multiple matches in the case of a blank tile
-                                    for match in matches:
-                                        PSolutions.append([Row[1:],Hand.replace(char,"",1),match,String + Node.value])
+                                    if(type(matches) == 'list'):
+
+                                        # if there are goes over every item in matches
+                                        # this may be multiple matches in the case of a blank tile
+                                        for match in matches:
+                                            PSolutions.append([Row[1:],Hand.replace(char,"",1),match,String + Node.value])
+
+                                    else:
+                                        PSolutions.append([Row[1:],Hand.replace(char,"",1),matches,String + Node.value])
 
                     # if the space in the row isn't blank, it must be a letter tile
                     else:
@@ -374,8 +377,6 @@ class Trie(Tree):
                             PSolutions.append([Row[1:],Hand,match,String + Node.value])
 
                 PSolutions.remove(NextItem)
-
-                time.sleep(0.5)
 
             # returns solutions
             return(Solutions)
