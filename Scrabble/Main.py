@@ -10,9 +10,6 @@ improvements:
 '''
 
 '''
-(>) definite steps
-(?) tentative steps
-
 This is code for a scrabble game.
 It has a somewhat simplified AI opponent, which can only play one word per turn
 Improvements still to make:
@@ -31,9 +28,6 @@ Improvements still to make:
    > use the score of the letter to judge this
   > add a HEAVY weight on getting rid of all tiles in the rack
    > use a depth first search algorithm on the trie of words
-    ? may create a bias towards playing words at the start of the dictionary
-    ? instead use a breadth first search with longest words first
-    ? perhaps order the dictionary by longest words first when producing a dictionary trie
   > use an iterative method and pause after a certain number of searches has been made
 > Keep the board when the user chooses to save
 > Create a function for playing an old file
