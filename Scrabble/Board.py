@@ -40,6 +40,29 @@ class Board:
                 flippedBoard[x] += y[x]
         return(flippedBoard)
 
+    def getAllWords(self):
+        allWords = []
+        for row in self.board:
+            words = row.split(".")
+            while("" in words):
+                words.pop("")
+            allWords.extend(words)
+
+        for column in self.getFlippedBoard():
+            words = column.split(".")
+            while("" in words):
+                words.pop("")
+            allWords.extend(words)
+        return(allWords)
+
+    def checkValidBoard(self,Dictionary):
+        words = self.getAllWords()
+        valid = True
+        for word in words:
+            if(not(Dictionary.checkValidPlay(word))):
+                valid = False
+        return(valid)
+
 if(__name__ == "__main__"):
     b = Board()
     board = ["......a........"
@@ -50,8 +73,8 @@ if(__name__ == "__main__"):
             ,"......b........"
             ,".spaghetti....."
             ,"......t........"
-            ,"......t........"
-            ,"......i........"
+            ,"..............."
+            ,"..............."
             ,"..............."
             ,"..............."
             ,"..............."

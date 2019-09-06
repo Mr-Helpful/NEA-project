@@ -1,4 +1,5 @@
-
+import Player as p
+import Board as b
 
 # very basic GUI at start, text based
 class GUI:
@@ -8,6 +9,9 @@ class GUI:
 
     def MVP(self):
         # code for text based AI
+        p1 = p.Player("Adam")
+        p2 = p.Player("Dave")
+        players = (p1, p2)
         pass
 
     def printBoard(self, board, hand):
@@ -19,8 +23,19 @@ class GUI:
         print(" "*6,end="")
         print(hand)
 
-    def playGame(self, board, hand):
-        menu = {"1":printBoard,"2":makeMove}
+    def makeMove(self, *args):
+
+
+    def playGame(self, board, hand, players):
+        print("")
+        menu = {"1":self.printBoard,"2":self.makeMove}
+        print("1) print the board")
+        print("2) make a play")
+        while(True):
+            choice = input("enter a choice:\n")
+            if(choice in menu.keys()):
+                choice = int(choice)
+        menu[choice](board, hand)
 
     def exit(self, *args):
         print("\nexiting game")
