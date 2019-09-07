@@ -2,6 +2,7 @@
 A trie based mathod of storing a dictionary.
 This allows it to be more compact and allow for faster searching
 '''
+import copy
 
 class Dictionary:
     def __init__(self):
@@ -217,93 +218,97 @@ class Trie(Tree):
         # prunes the tree to only represent letters present in the hand and row
         # this allows a simpler approach to finding the plays that work for the row
         # idea from: https://www.cs.cmu.edu/afs/cs/academic/class/15451-s06/www/lectures/scrabble.pdf
-        def pruneTree(self, letters):
+        def pruneTree(self, letters, ordered = 0):
+            newNodes = copy.copy(self._rootNode)
+
+            # initialises the stack with the copy of the rootNode and the letters used
+            stack = [[newNodes,letters]]
+
+            # only stops when it fully empties the stack
+            while(len(stack) != 0):
+
+                # pops the first frame off of the stack
+                frame = stack.pop(0)
+
+                # processes it and adds the new frames returned to the
+                newFrames = self.processFrame(frame, ordered)
+                stack.extend(newFrames)
+
+            return(newNodes)
+
+
+        # processes a single frame from pruneTree
+        def processFrame(self, frame, ordered):
+
+            # defines the parts of the frame being processed
+            [node, letters] = frame
+
+            # if the letters are supposed to be removed in order
+            if(ordered):
+
+                # only the first letter is processed
+                letters = letters[0]
+
+            # removes all duplicates from the letters
+            letters = list(set(letters))
+
+            # initiates the new frames to be added to the stack, to be filled later
+            frames = []
+            for letter in letters:
+
+                # creates a shallow copy
+                # this prevents it from interfering with the list from the frame
+                cLetters = copy.copy(letters)
+                cLetters.remove(letter)
+
+                # gets all the nodes with the correct letter(s) associated to it
+                nodes = findChild(node,letter)
+
+                # checks if there are any nodes to follow
+                if(nodes):
+
+                    # and creates a new frame for each one
+                    newFrames = [[node,cLetters] for node in nodes]
+                    frames.extend(newFrames)
+
+            # replaces the children of the current node
+            # used in order to prune the tree
+            children = [frame[0] for frame in frames]
+            node.children = children
+
+            # returns the, filled, new frames
+            return(frames)
+
+        # removes parts of the tree which do not represent full words
+        def clipTree(self, node):
+
+            # iterates through children, if there are any
+            for child in children:
+                self.clipTree(child)
+
+            # if there isn't a continuation to the word, or an end to it
+            if(len(node.children) == 0):
+
+                # it'll delete the node
+                del node
+
             pass
 
 
-        # tries to find all the possible matches for a row
-        # uses a given hand
-        # solutions are defaulted to empty on first execution
-        # and are then built up over the execution of the function
-        # and returned at the end
-        # string is defaulted to empty upon initialisation
-        # seperate solutions are then built up as string is passed down through the trie
-        def fitRow(self, Row, Hand = ".e.ar..", StartString = ""):
+        def fitRow(self, Row, Hand = ".e.ar.."):
 
-            Node = self._rootNode
+            # defines the node to be constructed from
+            node = self._rootNode
 
-            PSolutions = [[Row,Hand,Node,StartString]]
+            # prunes the tree using the player's hand
+            node = self.pruneTree(node, Hand)
 
-            Solutions = []
+            # prunes the tree using the row on the board
+            node = self.pruneTree(node, Row, ordered = 1)
 
-            while(len(PSolutions) != 0):
+            self.clipTree(node)
 
-                NextItem = PSolutions[0]
+            # retrieves all the possible words from this new tree
+            Solutions = self.retrieveWords(node)
 
-                Row = NextItem[0]
-
-                print(NextItem)
-
-                NextChar = Row[0]
-
-                Hand = NextItem[1]
-
-                Node = NextItem[2]
-
-                String = NextItem[3]
-
-                if(len(Row) != 0 and len(Hand) != 0):
-
-                    if(Node.value == self.EOW):
-
-                        print("Solution Found!")
-
-                        Solutions.append(String)
-
-                    if(NextChar == "."):
-
-                        # if a word has not been started yet the tree is still on the root node
-                        if(Node == self._rootNode):
-
-                            # the word can be shifted across without playing anything
-                            PSolutions.append([Row[1:],Hand,Node,String + Node.value])
-
-                            # goes over every tile in the hand
-                            # i.e. the tiles that can be played
-                            for char in Hand:
-
-                                # adds the next character from the hand
-                                # as it doesn't matter what character this is
-                                matches = self.findChild(Node,char)
-
-                                # tests if there are matches on the tree
-                                if(matches):
-
-                                    try:
-
-                                        # if there are goes over every item in matches
-                                        # this may be multiple matches in the case of a blank tile
-                                        for match in matches:
-                                            PSolutions.append([Row[1:],Hand.replace(char,"",1),match,String + Node.value])
-
-                                    except:
-                                        PSolutions.append([Row[1:],Hand.replace(char,"",1),matches,String + Node.value])
-
-                    # if the space in the row isn't blank, it must be a letter tile
-                    else:
-
-                        # there will only ever be one result from a letter char
-                        # it will either be an EOW character or
-                        match = self.findChild(Node,NextChar)
-
-                        # if find_child returns an answer that is not false it has found a valid branch
-                        if(match):
-
-                            # therefore it just navigates down the node without playing anything
-                            # as if a tile would be played from the hand it would be like overlapping them on the board
-                            PSolutions.append([Row[1:],Hand,match,String + Node.value])
-
-                PSolutions.remove(NextItem)
-
-            # returns solutions
             return(Solutions)
