@@ -2,29 +2,22 @@ import Player as p
 import Board as b
 
 # very basic GUI at start, text based
-class GUI:
+class MVP:
     def __init__(self):
-        self.MVP()
         pass
 
-    def MVP(self):
-        # code for text based AI
-        p1 = p.Player("Adam")
-        p2 = p.Player("Dave")
-        players = (p1, p2)
-        pass
-
-    def printBoard(self, board, hand):
+    # prints out the board, along with the current players hand
+    def printBoard(self, board, player):
         print("   ABCDEFGHIJKLMNO")
         for i in range(len(board)):
             lineNo = str(i+1).ljust(3," ")
             line = board[i]
             print(str(lineNo) + str(line))
         print(" "*6,end="")
-        print(hand)
+        print(player.hand)
 
     def makeMove(self, *args):
-
+        pass
 
     def playGame(self, board, hand, players):
         print("")
@@ -37,22 +30,23 @@ class GUI:
                 choice = int(choice)
         menu[choice](board, hand)
 
-    def exit(self, *args):
+    def exit(self):
         print("\nexiting game")
         quit()
 
     def mainScreen(self, board, hand):
-        menu = {"1":self.playGame,"2":self.exit}
+        menu = {"1":playGame,"2":exit}
         print("1) play a game")
         print("2) exit")
         while(True):
             choice = input("enter a choice:\n")
             if(choice in menu.keys()):
                 choice = int(choice)
-        menu[choice](board, hand)
+        return(menu[choice])
 
-    def full(self):
-        # code for the final GUI
+
+class fullGUI:
+    def __init__(self):
         pass
 
 

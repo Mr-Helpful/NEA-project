@@ -29,15 +29,21 @@ class Dictionary:
         # checks if there is a word list available to convert into a trie
         pass
 
-    def convertWords(self,words):
-        # converts a list of words to a trie
+    def convertWords(self, words):
+        # removes words longer than 15 letters
+        # > this makes the trie smaller
+        # > and makes the search more efficient
+        # also, in a similar vein, removes words with more letters than in the scrabble word bag
+        # > for example "zzz" is not a valid word as it has more "z"s than are in the word bag
+        # then converts a list of words to a trie
+        
         pass
 
-    def readTrie(self,trie):
+    def readTrie(self, trieFile):
         # uses pickle to open a pre-existing trie object
         pass
 
-    def storeTrie(self,trie):
+    def storeTrie(self, trie):
         # uses pickle to store the trie once converted
         pass
 
@@ -183,19 +189,33 @@ class Trie(Tree):
         # allows for storage of a list of words at once
         def storeWords(self, words):
 
-            # iterates through words and calls store_word() on each one
+            # iterates through words and calls storeWord() on each one
             for word in words:
                 self.storeWord(word)
 
+        # returns a list of all the words stored within the tree
         def retrieveWords(self, node = 0, string = ""):
+
+            # self._rootNode cannot be used as a default
+            # so this represents a hack to set it as default
             if(node == 0):
                 node = self._rootNode
-            wordList = []
+
+            # if it encounters an end of word character, it will return the finished string
             if(node.value == self.EOW):
-                return(wordList.append(string))
+                return(string)
+
+            # builds up a string using the previous part of the string and the character stored at the node
             newString = string + node.value
+
+            # sets up the empty wordlist at the start and fills it using recursion
+            wordList = []
             for child in node.children:
+
+                # passes the implementation down the layers
                 wordList.extend(self.retrieveWords(child,newString))
+
+            # passes the extended wordList up the layers
             return(wordList)
 
         # gives an efficient method for searching for a word within the Trie
@@ -312,3 +332,8 @@ class Trie(Tree):
             Solutions = self.retrieveWords(node)
 
             return(Solutions)
+
+if(__name__ == "__main__"):
+    # testing code here
+
+    pass

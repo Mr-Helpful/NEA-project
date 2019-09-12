@@ -3,7 +3,7 @@
 import pickle
 
 # provides an interface for the SQL database
-class database:
+class Database:
     def __init__(self,filename):
         self.setup(filename)
         pass
