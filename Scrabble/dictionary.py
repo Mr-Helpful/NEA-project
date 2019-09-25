@@ -2,54 +2,99 @@
 A trie based mathod of storing a dictionary.
 This allows it to be more compact and allow for faster searching
 '''
+import pickle
+import os
 import copy
+import Bag
+import time
 
 class Dictionary:
-    def __init__(self):
-        self.Trie = self.retrieveDict()
+    dataFolder = "Data"
+    def __init__(self, trieFile, wordFile, bag):
+        self.trie = self.retrieveDict(trieFile, wordFile, bag)
         pass
 
-    def retrieveDict(self):
+    def retrieveDict(self, trieFile, wordFile, bag):
+        t1 = time.time()
         # retreives the trie for use in the program
-        trieCheck = self.checkForTrie()
-        wordCheck = self.checkForWords()
-        if(trieCheck):
-            self.readTrie(trieCheck)
-        elif(wordCheck):
-            self.convertWords(wordCheck)
+        trie = self.readTrie(trieFile)
+        words = self.readWords(wordFile)
+
+        # this if is used to check if a trie file already exists and if it does
+        # then it will skip all later parts of the selection statement
+        if(trie):
+            pass
+
+        # if a trieFile cannot be found but a word file can
+        elif(words):
+
+            # then it uses the words list to create a trie
+            trie = self.convertWords(words, bag)
+
+            # finally it stores the newly made trie in the trieFile to make booting
+            # faster next time
+            # on average, this leads to a time save factor of 6.3*
+            self.storeTrie(trieFile, trie)
+
+        # if neither a trieFile or a wordFile can be found, it throws an error
         else:
             raise Exception("No dictionary found upon initialisation")
-        pass
+        t2 = time.time()
+        print("trie loaded in {:.2f} seconds".format(t2-t1))
+        return(trie)
 
-    def checkForTrie(self):
-        # checks if there is a pre-existing trie from which it can load the dictionary
-        pass
-
-    def checkForWords(self):
-        # checks if there is a word list available to convert into a trie
-        pass
-
-    def convertWords(self, words):
+    def convertWords(self, words, bag):
         # removes words longer than 15 letters
         # > this makes the trie smaller
         # > and makes the search more efficient
         # also, in a similar vein, removes words with more letters than in the scrabble word bag
-        # > for example "zzz" is not a valid word as it has more "z"s than are in the word bag
+        # > for example "zzzz" is not a valid word as it has more "z"s (and blanks) than are in the word
+        # This leads to a reduction by 30,878,791 bytes / 31,999,201 bytes = 96.5%
+
         # then converts a list of words to a trie
-        
-        pass
+
+        for word in words:
+            if(len(word) > 15):
+                words.remove(word)
+            elif(not(bag.checkWordInBag(word))):
+                words.remove(word)
+
+        trie = Trie()
+        trie.storeWords(words)
+        return(trie)
+
+    def readWords(self, wordFile):
+        try:
+            with open("{}/{}".format(Dictionary.dataFolder, wordFile), "r") as f:
+                lines = f.read().split("\n")
+                # opens a pre-existing words file and returns it as a list
+        except FileNotFoundError:
+            return(False)
+        return(lines)
 
     def readTrie(self, trieFile):
-        # uses pickle to open a pre-existing trie object
-        pass
+        try:
+            with open("{}/{}".format(Dictionary.dataFolder, trieFile), "rb") as f:
+                # uses pickle to open a pre-existing trie object
+                trie = pickle.load(f)
+        except(FileNotFoundError, EOFError):
+            return(False)
+        return(trie)
 
-    def storeTrie(self, trie):
-        # uses pickle to store the trie once converted
-        pass
+    def storeTrie(self, trieFile, trie):
+        with open("{}/{}".format(Dictionary.dataFolder, trieFile), "wb") as f:
+            # uses pickle to store the trie once converted
+            pickle.dump(trie, f)
 
     def checkForWord(self, word):
         # checks if a word is present within the trie structure
-        self.Trie.checkForWord(word)
+        nodes = self.trie.checkForWord(word)
+        if(nodes):
+            for node in nodes:
+                for c in node.children:
+                    if(c.value == self.trie.EOW):
+                        return(True)
+        return(False)
 
 
 
@@ -138,7 +183,7 @@ class Trie(Tree):
 
                     # if so it updates the value of charCheck to the node conataining this character
                     # it is formatted as a list for ease of use later
-                    charCheck = Cnode
+                    charCheck = [Cnode]
 
             # if the value is blank it returns all of the children
             if(char == "."):
@@ -230,7 +275,7 @@ class Trie(Tree):
                         newNodes.extend(self.findChild(node,char))
                 nodes = newNodes
 
-            nodes = [node for node in nodes if(checkEnd(node))]
+            nodes = [node for node in nodes if(self.checkEnd(node))]
             if(len(nodes) == 0):
                 return(False)
             return(nodes)
@@ -335,5 +380,10 @@ class Trie(Tree):
 
 if(__name__ == "__main__"):
     # testing code here
+    b = Bag.Bag()
 
-    pass
+    wordFile = "WordList"
+    trieFile = "WordTrie"
+    d = Dictionary(trieFile, wordFile, b)
+    w = d.checkForWord("Zyzzogeton")
+    print(w)

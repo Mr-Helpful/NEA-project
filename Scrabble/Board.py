@@ -1,4 +1,6 @@
 import copy
+from Dictionary import *
+import Bag
 
 class Board:
     size = 15
@@ -32,63 +34,84 @@ class Board:
     def getBoard(self):
         return(self.board)
 
-    def getFlippedBoard(self):
-        board = self.board
-        flippedBoard = ["" for _ in range(self.size)]
+    def getFlippedBoard(self, board = False):
+        if(not(board)):
+            board = self.board
+        flippedBoard = ["" for _ in range(len(board))]
         for y in board:
             for x in range(len(y)):
                 flippedBoard[x] += y[x]
         return(flippedBoard)
 
-# need to rework this algortihm, as it currently doesn't work
-    def getAllWords(self):
-        allWords = []
-        for row in self.board:
-            words = row.split(".")
-            while("" in words):
-                words.pop("")
-            allWords.extend(words)
+    # expandBoard copies the board and expands it to leave a ring of blank spaces
+    # around the edge.
+    # this form of the board is useful when checking if the entire board is valid
+    # as it prevents indexing errors from being thrown and instead returns a blank
+    # tile.
+    # the reason it copies the board is to allow it to be manipulated without
+    # affecting the original board, which should only ever be modified by a player
+    # making a valid move on it.
+    def expandBoard(self, board):
 
-        for column in self.getFlippedBoard():
-            words = column.split(".")
-            while("" in words):
-                words.pop("")
-            allWords.extend(words)
-        return(allWords)
+        # makes a shallow copy of the board passed into the function
+        newBoard = board[:]
+        extension = ["."*(len(newBoard)+2)]
+        newBoard = ["."+i+"." for i in newBoard]
+        rList = []
+        rList.extend(extension)
+        rList.extend(newBoard)
+        rList.extend(extension)
+        return(rList)
 
-# algorithm:
-# > makes a copy of the board
-# > start on the center row and records the word passing through the center
-# > removes all parts of the word which don't have another word connected
-# > records which words cross through it
+    def checkValidBoard(self, dictionary):
+        validWords = self.checkValidWords(dictionary)
+        validPositions = self.checkValidPostitions()
+        if(validWords):
+            print("all words played are valid")
+        if(validPositions):
+            print("all positions played are valid")
+
+        if(validWords and validPositions):
+            return(True)
+        return(False)
+
+    def checkValidWords(self, dictionary):
+        words = self.getAllWords()
+        print(words)
+        valid = True
+        for word in words:
+            if(not(dictionary.checkForWord(word))):
+                valid = False
+        return(valid)
+
+    # algorithm:
+    # > starts from the top left hand corner of the board
+    # > if a play has both an empty space before it and a filled space after then
+    # it is considered to be the start of a word
+    # > when it finds the start of a word it adds the whole word to the dictionary
+    # and then moves along one row
     def getAllWords(self):
         words = []
         board = self.expandBoard(self.board)
+        print(board)
+        print("_________________________")
+        print("\n".join(board))
         hWords = self.getWords(board)
         words.extend(hWords)
 
         board = self.getFlippedBoard(board)
         vWords = self.getWords(board)
         words.extend(vWords)
+        words = [i for i in words if(i != '')]
         return(words)
 
     def getWords(self, board):
         words = []
-        for r in range(len(board)):
-            for c in range(len(board[r])):
-                word = self.checkPlaceForStart(board, r, c)
+        for r in range(len(board)-2):
+            for c in range(len(board[r])-2):
+                word = self.checkPlaceForStart(board, r+1, c+1)
                 words.append(word)
         return(words)
-
-    def expandBoard(self, board):
-        # expands the board to include a ring of blank spaces around the edge
-        # this allows the search on the edge of the board without errors
-        # also copies the original board so that any edits made whilst searching don't affect it
-        board = copy.copy(board)
-        extension = ["."*(len(b)+2)]
-        board = ["."+i+"." for i in board]
-        board = extension.extend(board).extend(extension)
-        return(board)
 
     def checkPlaceForStart(self, board, r, c):
         before = board[r][c-1]
@@ -96,11 +119,11 @@ class Board:
         if(after != "." and before == "."):
             word = self.getWord(board[r], c)
             return(word)
-        return(False)
+        return('')
 
     # finds the end of a word where the start point is placed
     def getWord(self, row, startPoint):
-        endPoint = testPoint
+        endPoint = startPoint
         while True:
             if(row[endPoint] == "."):
                 break
@@ -108,33 +131,24 @@ class Board:
 
         return(row[startPoint:endPoint])
 
-    # finds the letters which vary on the line before the play and after
-    # this would likely not be necessary for the final GUI, as it would be easier to find the new letters played
-    def getChanges(self, line, play):
-        changedLetters = []
-        for i in range(len(line)):
-            if(line[i] == play[i]):
-                changedLetters.append(".")
-            else:
-                changedLetters.append(play[i])
-
-        return(changedLetters)
-
-    def checkValidBoard(self, dictionary):
-        validWords = self.checkValidWords(dictionary)
-
-
     def checkValidPostitions(self):
         board = self.expandBoard(self.board)
         stack = [[9,9]]
         while True:
+            print(len(stack))
             coords = stack.pop(0)
             r = coords[0]
             c = coords[1]
-            board[r][c] = "."
+            board[r] = self.deleteEntry(board[r], c)
             stack.extend(self.checkPosition(board, r, c))
             if(len(stack) == 0):
                 break
+
+    def deleteEntry(self, line, c):
+        line = list(line)
+        line[c] = "."
+        line = str(line)
+        return(line)
 
     def checkPosition(self, board, r, c):
         stack = []
@@ -148,13 +162,17 @@ class Board:
             stack.append([r-1,c])
         return(stack)
 
-    def checkValidWords(self, dictionary):
-        words = self.getAllWords()
-        valid = True
-        for word in words:
-            if(not(Dictionary.checkValidPlay(word))):
-                valid = False
-        return(valid)
+    # finds the letters which vary on the line before the play and after
+    # this would likely not be necessary for the final GUI, as it would be easier to find the new letters played
+    def getChanges(self, line, play):
+        changedLetters = []
+        for i in range(len(line)):
+            if(line[i] == play[i]):
+                changedLetters.append(".")
+            else:
+                changedLetters.append(play[i])
+
+        return(changedLetters)
 
     def getBoardLine(self, orientation, rC):
         board = self.board
@@ -175,9 +193,8 @@ class Board:
 
         changes = self.getChangedLetters(line, play)
 
-        for
-
         numChanges = len(changes) - changes.count(".")
+        pass
 
 if(__name__ == "__main__"):
     b = Board()
@@ -187,8 +204,8 @@ if(__name__ == "__main__"):
             ,"......h........"
             ,"......a........"
             ,"......b........"
-            ,".spaghetti....."
-            ,"......t........"
+            ,"......e........"
+            ,"spaghetti......"
             ,"..............."
             ,"..............."
             ,"..............."
@@ -200,3 +217,10 @@ if(__name__ == "__main__"):
     b.setBoard(board)
     fBoard = b.getFlippedBoard()
     print("\n".join(fBoard))
+
+    bag = Bag.Bag()
+    wordFile = "WordList"
+    trieFile = "WordTrie"
+    d = Dictionary(trieFile, wordFile, bag)
+    print("checking for valid board:")
+    print(b.checkValidBoard(d))
