@@ -65,12 +65,19 @@ class Bag:
                ,"z":10
                ,".":0})
 
-    def getTiles(self, noTiles):
+    def isEmpty(self):
+        return(len(self.bag) == 0)
+
+    def getTiles(self, noTiles, modify = True):
+        if(modify):
+            bag = self.bag
+        else:
+            bag = self.bag[:]
+
         newTiles = []
         for _ in range(noTiles):
             random.shuffle(self.bag)
-            firstTile = self.bag[0]
-            self.bag.remove(firstTile)
+            bag.pop(0)
             newTiles.append(firstTile)
         return(newTiles)
 

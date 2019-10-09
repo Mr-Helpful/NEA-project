@@ -12,13 +12,14 @@ class Dictionary:
     dataFolder = "Data"
     def __init__(self, trieFile, wordFile, bag):
         self.trie = self.retrieveDict(trieFile, wordFile, bag)
+        self.writeTrie = "/Users/acolby/Documents/School Work/ Computer science/NEA-project/Scrabble/Data/WordTrie"
         pass
 
-    def retrieveDict(self, trieFile, wordFile, bag):
+    def retrieveDict(self, trieFiles, wordFiles, bag):
         t1 = time.time()
         # retreives the trie for use in the program
-        trie = self.readTrie(trieFile)
-        words = self.readWords(wordFile)
+        trie = self.readTrie(trieFiles)
+        words = self.readWords(wordFiles)
 
         # this if is used to check if a trie file already exists and if it does
         # then it will skip all later parts of the selection statement
@@ -34,7 +35,7 @@ class Dictionary:
             # finally it stores the newly made trie in the trieFile to make booting
             # faster next time
             # on average, this leads to a time save factor of 6.3*
-            self.storeTrie(trieFile, trie)
+            self.storeTrie(trie)
 
         # if neither a trieFile or a wordFile can be found, it throws an error
         else:
@@ -63,26 +64,31 @@ class Dictionary:
         trie.storeWords(words)
         return(trie)
 
-    def readWords(self, wordFile):
-        try:
-            with open("{}/{}".format(Dictionary.dataFolder, wordFile), "r") as f:
-                lines = f.read().split("\n")
-                # opens a pre-existing words file and returns it as a list
-        except FileNotFoundError:
-            return(False)
-        return(lines)
+    def readWords(self, wordFiles):
+        for file in wordFiles:
+            try:
+                with open(file, "r") as f:
+                    lines = f.read().split("\n")
+                    # opens a pre-existing words file and returns it as a list
+                return(lines)
+            except FileNotFoundError:
+                pass
+        return(False)
 
-    def readTrie(self, trieFile):
-        try:
-            with open("{}/{}".format(Dictionary.dataFolder, trieFile), "rb") as f:
-                # uses pickle to open a pre-existing trie object
-                trie = pickle.load(f)
-        except(FileNotFoundError, EOFError):
-            return(False)
-        return(trie)
+    def readTrie(self, trieFiles):
+        for file in trieFiles:
+            try:
+                with open(file, "rb") as f:
+                    # uses pickle to open a pre-existing trie object
+                    trie = pickle.load(f)
+                return(trie)
+            except(FileNotFoundError, EOFError):
+                pass
+        return(False)
 
-    def storeTrie(self, trieFile, trie):
-        with open("{}/{}".format(Dictionary.dataFolder, trieFile), "wb") as f:
+    def storeTrie(self, trie):
+        trieFile = self.writeTrie
+        with open(trieFile, "wb") as f:
             # uses pickle to store the trie once converted
             pickle.dump(trie, f)
 

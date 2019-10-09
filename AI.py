@@ -1,6 +1,6 @@
 import Player
 
-class AI(player):
+class AI(Player.Player):
     def __init__(self):
         pass
 

@@ -7,3 +7,6 @@ class Database:
     def __init__(self,filename):
         self.setup(filename)
         pass
+
+    def setup(self, filename):
+        pass
