@@ -10,13 +10,12 @@ class Player:
         self.hand = "".join(newTiles)
 
     # ask the user to make a move through the GUI
-    def makeMove(self, board, GUI, bag):
-        rowColumn, orientation, play, changes = GUI.makeMove(board, self, super())
-        confirmed = GUI.confirmPlay(rowColumn, orientation, play, board)
+    def makeMove(self, board, GUI, bag, game):
+        rowColumn, orientation, play, changes = GUI.makeMove(board, self, game)
+        confirmed = GUI.confirmPlay(rowColumn, orientation, play, board, self)
         if(confirmed):
             board.makeMove(rowColumn, orientation, play)
             self.changeHand(changes)
-            break
 
     def checkValidPlay(self, changes):
         hand = list(self.hand[:])

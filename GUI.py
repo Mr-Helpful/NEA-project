@@ -1,3 +1,9 @@
+from tkinter import *
+import Board
+import Dictionary
+import Bag
+import os
+
 # very basic GUI at start, text based
 class MVP:
     def __init__(self):
@@ -79,30 +85,127 @@ class MVP:
             if(choice in menu.keys()):
                 return(menu[choice])
 
-class fullGUI:
-    def __init__(self):
-        pass
+class Draggable:
+    def __init__(self, object, snapCoords, snapRadius):
 
+        # determines whether the object is being dragged
+        self.dragging = False
+        self.currentCoords = [0,0]
+        self.snapCoords = snapCoords
+        self.snapRadius = snapRadius
+        self.make_draggable(object)
+
+    def make_draggable(self, widget):
+        widget.bind("<Button-1>", self.toggle_drag)
+        widget.bind("<Motion>", self.on_drag_motion)
+        widget.bind("<Button-2>", self.holdup)
+
+    def toggle_drag(self, event):
+
+        # toggle the dragging variable
+        self.dragging = not(self.dragging)
+        widget = event.widget
+        if(self.dragging):
+            print("drag started from widget: {}".format(widget))
+            widget._drag_start_x = event.x
+            widget._drag_start_y = event.y
+
+        else:
+            x = widget.winfo_x()
+            y = widget.winfo_y()
+            distances = {(p[0]-x)**2 + (p[1]-y)**2: p for p in self.snapCoords}
+            minD = min(distances.keys())
+
+            if(minD < self.snapRadius ** 2):
+                p = distances[minD]
+                widget.place(x = p[0], y = p[1])
+
+    def on_drag_motion(self, event):
+        if(self.dragging):
+            widget = event.widget
+            x = widget.winfo_x() - widget._drag_start_x + event.x
+            y = widget.winfo_y() - widget._drag_start_y + event.y
+            self.currentCoords[0] = x
+            self.currentCoords[1] = y
+            widget.place(x = x, y = y)
+
+    def holdup(self, event):
+        cont = input("try me!")
+        print("done")
+
+class Full:
+    def __init__(self, Board, Bag, Dictionary):
+        self.Window = Tk()
+        self.buildGUI()
+        self.runGUI()
+
+    def buildGUI(self):
+        self.Window.title("Tile testing")
+        self.Window.config(background = "#fafafa")
+        self.buildTiles()
+
+    def buildTiles(self):
+        snapCoords = [[10,10],[75,10]]
+        snapRadius = 20
+        for _ in range(2):
+            self.addTiles(snapCoords, snapRadius)
+
+    def addTiles(self, snapCoords, snapRadius, Letter = "_", Score = 0, x = 0, y = 0):
+        frm = Frame(self.Window, relief = "raised", borderwidth = 5, width = 60, height = 60)
+        frm.place(x = x, y = y)
+
+        msg = Message(frm, text = Letter, font = ("Helvetica", 30))
+        msg.place(x = 0, y = 0)
+        self.linkEvents(msg, frm)
+
+        Draggable(frm, snapCoords, snapRadius)
+
+    def linkEvents(self, child, parent):
+        bindtags = list(child.bindtags())
+        bindtags.insert(1, parent)
+        child.bindtags(tuple(bindtags))
+
+    def runGUI(self):
+        self.Window.mainloop()
+
+
+
+# sets up all objects which either have a dependancy on a file, or another object
+def setupFiles(Bag):
+    paths = getFilePaths()
+    dictionary = Dictionary.Dictionary(paths["trieFile"], paths["wordFile"], Bag)
+    board = Board.Board(Dictionary, Bag)
+    return(dictionary, board)
+
+def getFilePaths():
+    dataPath = os.getcwd() + "/Data"
+    walkNames = os.walk(dataPath)
+    fileNames = list(walkNames)[0][2]
+    regexes = {"wordFile":".*List","trieFile":".*Trie"}
+    filePaths = {}
+    for key in regexes.keys():
+        regex = regexes[key]
+        Paths = findFiles(dataPath, fileNames, regex)
+        filePaths[key] = Paths
+    return(filePaths)
+
+def findFiles(dataPath, fileNames, regex):
+    pathNames = []
+    r = re.compile(regex)
+    for name in fileNames:
+        if(r.match(name)):
+            fullPath = extendPath(dataPath, name)
+            pathNames.append(fullPath)
+    return(pathNames)
+
+def extendPath(dataPath, fileName):
+    return(dataPath + "/" + fileName)
 
 if(__name__ == "__main__"):
-    board = ["......a........"
-            ,"......l........"
-            ,"......p........"
-            ,"......h........"
-            ,"......a........"
-            ,"......b........"
-            ,".spaghetti....."
-            ,"......t........"
-            ,"......t........"
-            ,"......i........"
-            ,"..............."
-            ,"..............."
-            ,"..............."
-            ,"..............."
-            ,"..............."
-            ]
-    hand = "ahgskfj"
-    g = MVP()
-    g.printBoard(board, hand)
-    g.exit()
-    print("the end is never the end")
+
+    bag = Bag.Bag()
+    dictionary, board = setupFiles(bag)
+    # these would usually be passed in, maybe with a customised board layout
+
+    print("done")
+    f = Full(board, bag, dictionary)

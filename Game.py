@@ -39,7 +39,7 @@ class Game:
         return(True)
 
     def tryMove(self, player):
-        player.makeMove(self.board, self.GUI, self.bag)
+        player.makeMove(self.board, self.GUI, self.bag, self)
         check, rowColumn, orientation, play = self.GUI.makeMove(self.board, player, self)
         if(not(check)):
             return(True)

@@ -77,7 +77,7 @@ class Bag:
         newTiles = []
         for _ in range(noTiles):
             random.shuffle(self.bag)
-            bag.pop(0)
+            firstTile = bag.pop(0)
             newTiles.append(firstTile)
         return(newTiles)
 

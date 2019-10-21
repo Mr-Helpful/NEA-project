@@ -11,9 +11,8 @@ import time
 class Dictionary:
     dataFolder = "Data"
     def __init__(self, trieFile, wordFile, bag):
+        self.writeTrie = "/Users/acolby/Documents/School_Work/_Computer_science/NEA-project/Scrabble/Data/WordTrie"
         self.trie = self.retrieveDict(trieFile, wordFile, bag)
-        self.writeTrie = "/Users/acolby/Documents/School Work/ Computer science/NEA-project/Scrabble/Data/WordTrie"
-        pass
 
     def retrieveDict(self, trieFiles, wordFiles, bag):
         t1 = time.time()
@@ -55,9 +54,7 @@ class Dictionary:
         # then converts a list of words to a trie
 
         for word in words:
-            if(len(word) > 15):
-                words.remove(word)
-            elif(not(bag.checkWordInBag(word))):
+            if(not(bag.checkWordInBag(word))):
                 words.remove(word)
 
         trie = Trie()
@@ -176,7 +173,7 @@ class Trie(Tree):
         # defines the character used to end a word
         EOW = ")"
 
-        def findChild(self,node,char):
+        def findChild(self, node, char):
             # firstly defines charCheck as False
             # this will remain the value of charcheck if it fails to find the relevant node
             charCheck = False
@@ -189,7 +186,7 @@ class Trie(Tree):
 
                     # if so it updates the value of charCheck to the node conataining this character
                     # it is formatted as a list for ease of use later
-                    charCheck = [Cnode]
+                    charCheck = Cnode
 
             # if the value is blank it returns all of the children
             if(char == "."):
@@ -221,7 +218,7 @@ class Trie(Tree):
 
                 # does a check for the correct character in the current nodes children
 
-                charCheck = self.findChild(root,char)
+                charCheck = self.findChild(root, char)
 
                 # checks whether a node doesn't exist for the correct letter
                 if(not(charCheck)):

@@ -219,6 +219,9 @@ class Board:
     def editBoard(self, rC, orientation, play):
         board = self.getBoardRotation(orientation)
 
+        print(play)
+        print(board)
+
         board[rC] = list(play)
 
         board = self.getBoardRotation(orientation, board)
