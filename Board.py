@@ -1,15 +1,16 @@
 import copy
-from Dictionary import *
+
+import Dictionary
+import Play
 import Bag
 
 class Board:
     size = 15
-    def __init__(self, dictionary, bag, boardName = None):
+    def __init__(self, dictionary, bag):
         # tests for a specialised board being used
         self.dictionary = dictionary
         self.bag = bag
-        if(boardName == None):
-            self.generateStandardBoard()
+        self.generateStandardBoard()
 
     def generateStandardBoard(self):
         self.weights = [["3w","  ","  ","2l","  ","  ","  ","3w","  ","  ","  ","2l","  ","  ","3w"]
@@ -40,19 +41,15 @@ class Board:
     def getBoard(self):
         return(self.board)
 
-    def printBoard(self, board = False):
-        if(not(board)):
-            board = self.board
-        for line in board:
-            print("".join(line))
+    def setWeights(self, weights):
+        self.weights = weights
 
-    def getFlippedBoard(self, board = False):
-        if(not(board)):
-            board = self.board
+    def getFlippedBoard(self, board):
         flippedBoard = [[] for _ in range(len(board))]
         for y in board:
             for x in range(len(y)):
                 flippedBoard[x].append(y[x])
+
         return(flippedBoard)
 
     # expandBoard copies the board and expands it to leave a ring of blank spaces
@@ -64,7 +61,7 @@ class Board:
     # affecting the original board, which should only ever be modified by a player
     # making a valid move on it.
     def expandBoard(self, board):
-        # makes a shallow copy of the board passed into the function
+        # makes a shallow copy of the board to be passed into the function
         newBoard = board[:]
         extension = [["."]*(len(newBoard)+2)]
         newBoard = [["."]+i+["."] for i in newBoard]
@@ -74,17 +71,16 @@ class Board:
         rList.extend(extension)
         return(rList)
 
-    def checkValidPlay(self, rC, orientation, play):
-        board = self.editBoard(rC, orientation, play)
+    def checkValidPlay(self, nPlay):
+        board = self.getEditedBoard(nPlay)
         return(self.checkValidBoard(board))
 
     def checkValidBoard(self, board):
         validWords = self.checkValidWords(board)
         validPositions = self.checkValidPostitions(board)
-        if(validWords):
-            print("all words played are valid")
-        if(validPositions):
-            print("all positions played are valid")
+
+        print("words:" + str(validWords))
+        print("positions:" + str(validPositions))
 
         if(validWords and validPositions):
             return(True)
@@ -158,7 +154,6 @@ class Board:
             coords = stack.pop(0)
             r = coords[0]
             c = coords[1]
-            print(board[r][c])
             board[r][c] = "."
             stack.extend(self.checkPosition(board, r, c))
             if(len(stack) == 0):
@@ -191,21 +186,24 @@ class Board:
 
     # finds the letters which vary on the line before the play and after
     # this would likely not be necessary for the final GUI, as it would be easier to find the new letters played
-    def getChanges(self, rC, orientation, play):
-        line = self.getBoardRotation(orientation)[rC]
-        changedLetters = []
+    def getChanges(self, nPlay):
+        line = self.getBoardRotation(nPlay.orientation)[nPlay.rC]
         for i in range(len(line)):
-            if(line[i] == play[i]):
-                pass
+            if(line[i] == nPlay.line[i]):
+                nPlay.changes.append(".")
 
             # without this line, people could overwrite other's plays by playing blanks where there were tiles
-            elif(play[i] == "."):
-                return(False)
+            elif(nPlay.line[i] == "."):
+
+                # this returns 15 underscores in a row
+                # this is done as the underscore tile doesn't exist in the player's hand
+                # and there are only two blank tiles in the bag
+                # this means that any play which uses this format will be failed immediately
+                nPlay.changes = ["_"*15]
+                return()
 
             else:
-                changedLetters.append(play[i])
-
-        return(changedLetters)
+                nPlay.changes.append(nPlay.line[i])
 
     def getBoardRotation(self, orientation, board = False):
         if(not(board)):
@@ -216,40 +214,58 @@ class Board:
 
         return(board)
 
-    def editBoard(self, rC, orientation, play):
-        board = self.getBoardRotation(orientation)
+    def getEditedBoard(self, nPlay):
+        board = self.getBoardRotation(nPlay.orientation)
 
-        print(play)
-        print(board)
+        board[nPlay.rC] = list(nPlay.line)
 
-        board[rC] = list(play)
-
-        board = self.getBoardRotation(orientation, board)
+        board = self.getBoardRotation(nPlay.orientation, board)
         return(board)
 
-    def makeMove(self, rC, orientation, play):
-        board = self.board[:]
-        board = self.editBoard(rC, orientation, play)
+    def updateBoard(self, nPlay):
+        board = self.getEditedBoard(nPlay)
         self.setBoard(board)
+
+    def getScore(self, game, nPlay):
+        total = self.scoreRow(game, nPlay)
+
+        for i, change in enumerate(nPlay.changes):
+            if(change != "*"):
+                dPlay = copy.copy(nPlay)
+                dPlay.orientation = int(not(dPlay.orientation))
+                dPlay.rC = i
+
+                total += self.scoreRow(game, dPlay)
+
+        return(total)
 
     # orientation refers to whether the play is made across or down the board
     # rC refers to the number of the row/column of the board the play was made in
-    def scorePlay(self, orientation, rC, play, tiles):
-        line = self.getBoardLine(orientation, rC)
+    def scoreRow(self, game, nPlay):
+        weights = self.getBoardRotation(nPlay.orientation, self.weights)[nPlay.rC]
 
-        # the weights on the board have rotational symmetry, so they don't need to be flipped
-        weights = self.weights[rC]
+        tileScores = game.bag.scores
 
-        changes = self.getChangedLetters(line, play)
+        total = 0
+        mul = 1
+        for tile, weight in zip(nPlay.changes, weights):
+            score = tileScores[tile]
+            if(tile == "."):
+                pass
+            elif(weight[1] == "l"):
+                score *= int(weight[0])
+            elif(weight[1] == "w"):
+                mul *= int(weight[0])
 
-        numChanges = len(changes) - changes.count(".")
-        pass
+            total += score
+
+        return(total * mul)
 
 if(__name__ == "__main__"):
     bag = Bag.Bag()
     wordFile = "WordList"
     trieFile = "WordTrie"
-    dictionary = Dictionary(trieFile, wordFile, bag)
+    dictionary = Dictionary.Dictionary(trieFile, wordFile, bag)
     b = Board(dictionary, bag)
     board = [list("......all......")
             ,list("......l........")

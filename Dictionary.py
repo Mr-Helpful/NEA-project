@@ -3,10 +3,11 @@ A trie based mathod of storing a dictionary.
 This allows it to be more compact and allow for faster searching
 '''
 import pickle
-import os
 import copy
-import Bag
 import time
+import os
+
+import Bag
 
 class Dictionary:
     dataFolder = "Data"
@@ -186,7 +187,7 @@ class Trie(Tree):
 
                     # if so it updates the value of charCheck to the node conataining this character
                     # it is formatted as a list for ease of use later
-                    charCheck = Cnode
+                    charCheck = [Cnode]
 
             # if the value is blank it returns all of the children
             if(char == "."):

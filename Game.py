@@ -1,70 +1,122 @@
 class Game:
+    DefaultTilesPerPlayer = 7
+
     def __init__(self, players, board, bag, GUI):
         self.players = players
-        self.playerScores = {player: 0 for player in players}
-        self.passedTurns = {player: 0 for player in players}
+        self.playerScores = {player.name: 0 for player in players}
+        self.playerHands = {player.name: [] for player in players}
+        self.passedTurns = {player.name: 0 for player in players}
         self.board = board
         self.bag = bag
         self.GUI = GUI
         self.gameOngoing = True
         print("new game initialised")
+        self.setup()
         self.play()
+
+    def setup(self):
+        for player in self.players:
+            hand = self.playerHands[player.name]
+            newTiles = self.bag.getTiles(Game.DefaultTilesPerPlayer)
+            hand.extend(newTiles)
 
     def play(self):
         while(self.gameOngoing):
             self.takeTurn()
 
+        self.endGame()
+
     def endGame(self):
-        # give each player the option to pass a turn. If one of them passes three consecutive turns in a row the game is over
-        # this will need a method to stop players "ragequitting", when they reach a score higher than the AI and winning against it that way
-        # maybe just disable this method of checking when playing against an AI
-        # or refine it to when a player has passed three turns in a row AND the bag is empty.
-        pass
+        self.GUI.displayScores(self)
 
     def takeTurn(self):
         for player in self.players:
             self.takePlayerTurn(player)
 
     def takePlayerTurn(self, player):
-        print("\nIt is {}'s turn".format(player.name))
-        turnStillInPlay = True
-        menu = {"1":self.printBoard, "2":self.tryMove, "3":self.passTurn}
-        while(turnStillInPlay):
-            choice = self.GUI.takeTurn(menu)
-            turnStillInPlay = choice(player)
-            print("turnStillInPlay: {}".format(turnStillInPlay))
+        # about this point is where the encapsulation in the player class should occur
 
-    def printBoard(self, player):
-        self.GUI.printBoard(self.board, player)
-        return(True)
+        nPlay = player.takeTurn(self)
+
+        if(nPlay.confirmed == "passed"):
+            self.passedTurn(player)
+            return()
+
+        valid = self.checkMove(player, nPlay)
+        if(valid):
+            print("valid")
+            score = self.board.getScore(self, nPlay)
+            print(score)
+            self.playerScores[player.name] += score
+            self.board.updateBoard(nPlay)
+            self.updateHand(player, nPlay)
 
     def tryMove(self, player):
-        player.makeMove(self.board, self.GUI, self.bag, self)
-        check, rowColumn, orientation, play = self.GUI.makeMove(self.board, player, self)
+        player.makeMove(self)
+        check, rowColumn, orientation, play = self.GUI.makeMove(player, self)
         if(not(check)):
             return(True)
 
         board = self.board.editBoard(rowColumn, orientation, play)
         confirmed = self.GUI.confirmPlay(rowColumn, orientation, play, board, player)
-        print("play confirmed: {}".format(confirmed))
         if(confirmed):
             player.makeMove(self.board, self.GUI, self.bag)
             return(False)
         return(True)
 
-    def passTurn(self, player):
+    # give each player the option to pass a turn. If one of them passes three consecutive turns in a row the game is over
+    # this will need a method to stop players "rage quitting", when they reach a score higher than the AI and winning against it that way
+    # maybe just disable this method of checking when playing against an AI
+    # or refine it to when a player has passed three turns in a row AND the bag is empty.
+    def passedTurn(self, player):
+
+        # a debugging step to allow the game to be exited early
+        self.passedTurns[player.name] += 1
+
         if(self.bag.isEmpty()):
-            self.passedTurns[player] += 1
-        if(self.passedTurns[player] >= 3):
+            self.passedTurns[player.name] += 1
+        if(self.passedTurns[player.name] >= 3):
             self.gameOngoing = False
         return(False)
 
-    def checkMove(self, rC, orientation, play, player):
-        boardCorrect = self.board.checkValidPlay(rC, orientation, play)
-        lineChanges = self.board.getChanges(rC, orientation, play)
-        handCorrect = player.checkValidPlay(lineChanges)
-        print("handCorrect: {}".format(handCorrect))
+    def checkMove(self, player, nPlay):
+        boardCorrect = self.board.checkValidPlay(nPlay)
+        self.board.getChanges(nPlay)
+        handCorrect = self.checkValidHand(player, nPlay)
+
+        print("hand:" + str(handCorrect))
 
         if(boardCorrect and handCorrect):
-            return(True, lineChanges)
-        return(False, lineChanges)
+            return(True)
+        return(False)
+
+    def changeHand(self, player, nPlay, copy = True):
+        if(copy):
+            hand = self.playerHands[player.name][:]
+        else:
+            hand = self.playerHands[player.name]
+
+        print(hand)
+        print(nPlay.changes)
+
+        for c in nPlay.changes:
+            if(c == "."):
+                pass
+            elif(c in hand):
+                hand.remove(c)
+            elif("." in hand):
+                hand.remove(".")
+            else:
+                return(False)
+        return(True)
+
+    def checkValidHand(self, player, nPlay):
+        return(self.changeHand(player, nPlay))
+
+    def updateHand(self, player, nPlay):
+        self.changeHand(player, nPlay, False)
+        noLetters = len(nPlay.changes)
+
+        newTiles = self.bag.getTiles(noLetters)
+        hand = self.playerHands[player.name]
+        hand.extend(newTiles)

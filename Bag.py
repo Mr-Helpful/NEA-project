@@ -74,12 +74,10 @@ class Bag:
         else:
             bag = self.bag[:]
 
-        newTiles = []
-        for _ in range(noTiles):
-            random.shuffle(self.bag)
-            firstTile = bag.pop(0)
-            newTiles.append(firstTile)
-        return(newTiles)
+        random.shuffle(bag)
+        tiles = bag[:noTiles]
+        bag = bag[noTiles:]
+        return(tiles)
 
     def removeTile(self, bag, tile):
         bag.remove(tile)

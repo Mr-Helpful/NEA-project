@@ -1,92 +1,123 @@
 from tkinter import *
-import Board
-import Dictionary
-import Bag
+import numpy as np
 import os
+
+import Dictionary
+import Player
+import Board
+import Play
+import Bag
+
+# this has to be last so that it overwrites the Image method of the tkinter class
+# this is needed as everything is loaded from the tkinter module
+from PIL import Image, ImageTk, ImageDraw
 
 # very basic GUI at start, text based
 class MVP:
     def __init__(self):
         pass
 
-    # prints out the board, along with the current players hand
-    def printBoard(self, board, player):
-        if(type(board) == list):
-            b = board
-        else:
-            b = board.getBoard()
-        print("   ABCDEFGHIJKLMNO")
-        b = ["".join(i) for i in b]
-        for i in range(len(b)):
-            lineNo = str(i+1).ljust(3," ")
-            line = b[i]
-            print(str(lineNo) + str(line))
-        print(" "*6,end="")
-        print(player.hand)
+    # prints out the board, along with the current players hand
+    def printBoard(self, game, player, board = False):
+        if(not(board)):
+            board = game.board.getBoard()
 
-    def makeMove(self, board, player, game):
+        display = "   ABCDEFGHIJKLMNO\n"
+
+        board = ["".join(i) for i in board]
+        for i in range(len(board)):
+            lineNo = str(i+1).ljust(3," ")
+            line = board[i]
+            display += str(lineNo) + str(line) + "\n"
+
+        display += " "*6
+
+        hand = game.playerHands[player.name]
+        display += "".join(hand) + "\n"
+        return(display)
+
+    def makeMove(self, game, player, nPlay):
+        display = self.printBoard(game, player)
+        rowColumn = input(display + "choose a row/column to edit (A-O or 1-15):\n")
+
         columnLabels = [chr(i) for i in range(65,65+15)]
         rowLabels = [str(i+1) for i in range(15)]
-
-        rowColumn = input("choose a row/column to edit (A-O or 1-15):\n")
         while True:
             if(rowColumn in columnLabels):
-                orientation = 1
-                rowColumn = columnLabels.index(rowColumn)
+                nPlay.orientation = 1
+                nPlay.rC = columnLabels.index(rowColumn)
                 break
 
             elif(rowColumn in rowLabels):
-                orientation = 0
-                rowColumn = int(rowColumn) - 1
+                nPlay.orientation = 0
+                nPlay.rC = int(rowColumn) - 1
                 break
-            rowColumn = input("invalid row/column entered, please try again:\n")
-        check, play, lineChanges = self.getPlay(rowColumn, orientation, board, player, game)
-        return(check, rowColumn, orientation, play)
 
-    def getPlay(self, rC, orientation, board, player, game):
-        print("The current line is:")
-        row = board.getBoardRotation(orientation)[rC]
-        print("".join(row))
-        play = input("input the new row to be played:\n")
+            rowColumn = input(display + "invalid row/column entered, please try again:\n")
+        self.getPlay(game, player, nPlay, display)
+
+    def getPlay(self, game, player, nPlay, display):
+        inputStr = display + "The current line is:\n"
+
+        row = game.board.getBoardRotation(nPlay.orientation)[nPlay.rC]
+        inputStr += "".join(row) + "\n"
+
+        line = input(inputStr + "input the new row to be played:\n")
         while True:
-            check, lineChanges = game.checkMove(rC, orientation, play, player)
+            if(len(line) == 15):
+                break
 
-            if(not(check)):
-                print("invalid play, please try again")
-            return(check, play, lineChanges)
+            line = input(inputStr + "invalid length, please re-enter:\n")
 
-    def confirmPlay(self, rowColumn, orientation, play, board, player):
-        print("the new board will be:")
-        self.printBoard(board, player)
-        play = input("do you want to play the move (y/n):\n")
+        nPlay.line = line
+
+    def confirmPlay(self, game, player, nPlay):
+        newBoard = game.board.getEditedBoard(nPlay)
+
+        inputStr = "the new board will be:"
+        inputStr += self.printBoard(game, player, newBoard)
+        inputStr += "do you want to play the move (y/n):\n"
+
+        play = input(inputStr)
         if(play in ["y","yes","ok","true"]):
-            return(True)
-        return(False)
+            nPlay.confirmed = True
 
-    def takeTurn(self, menu):
-        print("1) print the board")
-        print("2) make a play")
-        print("3) pass move")
+    def takeTurn(self, menu, startStr = ""):
+        startStr += "1) make a play\n"
+        startStr += "2) pass move\n"
         while(True):
-            choice = input("enter a choice:\n")
+            choice = input(startStr  + "enter a choice:\n")
             if(choice in menu.keys()):
                 break
         return(menu[choice])
+
+    def displayScores(self, game):
+        display = []
+        for player in game.players:
+            name = str(player.name) + ":"
+            score = game.playerScores[player.name]
+            display.append([name, str(score)])
+
+        display = ["\n".join(d) for d in display]
+        display = "\n\n".join(display)
+        print(display)
 
     def exit(self):
         print("\nexiting game")
         quit()
 
     def mainScreen(self, menu, board):
-        print("1) play a game")
-        print("2) exit")
+        startStr = "1) play a game\n"
+        startStr += "2) exit\n"
+        startStr += "enter a choice:\n"
         while(True):
-            choice = input("enter a choice:\n")
+            choice = input(startStr)
             if(choice in menu.keys()):
                 return(menu[choice])
 
 class Draggable:
     def __init__(self, object, snapCoords, snapRadius):
+        self.dragObject = object
 
         # determines whether the object is being dragged
         self.dragging = False
@@ -104,9 +135,8 @@ class Draggable:
 
         # toggle the dragging variable
         self.dragging = not(self.dragging)
-        widget = event.widget
+        widget = self.dragObject
         if(self.dragging):
-            print("drag started from widget: {}".format(widget))
             widget._drag_start_x = event.x
             widget._drag_start_y = event.y
 
@@ -122,7 +152,7 @@ class Draggable:
 
     def on_drag_motion(self, event):
         if(self.dragging):
-            widget = event.widget
+            widget = self.dragObject
             x = widget.winfo_x() - widget._drag_start_x + event.x
             y = widget.winfo_y() - widget._drag_start_y + event.y
             self.currentCoords[0] = x
@@ -134,28 +164,83 @@ class Draggable:
         print("done")
 
 class Full:
-    def __init__(self, Board, Bag, Dictionary):
-        self.Window = Tk()
-        self.buildGUI()
+    def __init__(self, Board, Bag, Dictionary, Player):
+        self.Window = Toplevel()
+
+        print("building GUI")
+        self.buildGUI(Board, Player)
+
+        print("running GUI")
         self.runGUI()
 
-    def buildGUI(self):
+    def buildGUI(self, Board, Player):
+        size = 50
         self.Window.title("Tile testing")
-        self.Window.config(background = "#fafafa")
-        self.buildTiles()
+        self.Window.config(background = "#ececec")
+        self.Window.config(width = 1000, height = 850)
+        snapCoords = self.createBoard(Board)
+        self.addPicture(Player)
+        self.addDetails(Player)
+        self.buildTiles(snapCoords)
 
-    def buildTiles(self):
-        snapCoords = [[10,10],[75,10]]
+    def createBoard(self, Board):
+        bg = Frame(self.Window, bg = "#000000", width = 788, height = 788)
+        bg.place(x = 5, y = 5)
+
+        colours = {"2l":"#b2c6e9",
+                   "3l":"#446bc7",
+                   "2w":"#ffb381",
+                   "3w":"#ff0000",
+                   "St":"#ffb381",
+                   "  ":"#ffffff"}
+
+        snapCoords = []
+        size = 50
+        offset = 10
+
+        for x in range(15):
+            for y in range(15):
+                newCoords = [offset + (size + 2) * x, offset + (size + 2) * y]
+                snapCoords.append(newCoords)
+
+                weight = Board.weights[y][x]
+                sqr = Frame(self.Window, width = size, height = size, bg = colours[weight])
+                sqr.place(x = newCoords[0], y = newCoords[1])
+
+        return(snapCoords)
+
+    def addPicture(self, Player):
+        imageName = Player.imageName
+        photo = Image.open(imageName)
+        img = ImageTk.PhotoImage(photo)
+
+        panel = Label(self.Window, image = img)
+
+        # a reference needs to be kept to the original object
+        # this is required for the image to be displayed properly
+        panel.image = img
+        panel.place(x = 800, y = 5)
+
+    def addDetails(self, Player):
+        msg = Message(self.Window, text = Player.name)
+
+    def buildTiles(self, snapCoords):
         snapRadius = 20
-        for _ in range(2):
-            self.addTiles(snapCoords, snapRadius)
+        startX = 10
+        startY = 10
+        for _ in range(15):
+            self.addTile(snapCoords, snapRadius, x = startX, y = startY)
 
-    def addTiles(self, snapCoords, snapRadius, Letter = "_", Score = 0, x = 0, y = 0):
-        frm = Frame(self.Window, relief = "raised", borderwidth = 5, width = 60, height = 60)
+    def addTile(self, snapCoords, snapRadius, Letter = "_", Score = 10, x = 0, y = 0):
+        frm = Frame(self.Window, relief = "raised", borderwidth = 3, width = 50, height = 50)
         frm.place(x = x, y = y)
 
-        msg = Message(frm, text = Letter, font = ("Helvetica", 30))
-        msg.place(x = 0, y = 0)
+        msg = Label(frm, text = Letter, font = ("Helvetica", 25), width = 1, height = 1)
+        msg.place(x = 11, y = 3)
+        self.linkEvents(msg, frm)
+
+        msg = Label(frm, text = Score, font = ("Helvetica", 10), width = 1, height = 1)
+        msg.place(x = 32, y = 27)
         self.linkEvents(msg, frm)
 
         Draggable(frm, snapCoords, snapRadius)
@@ -168,9 +253,12 @@ class Full:
     def runGUI(self):
         self.Window.mainloop()
 
+'''
+Testing
+-------------------------------------------------------
+'''
 
-
-# sets up all objects which either have a dependancy on a file, or another object
+# sets up all objects which either have a dependancy on a file, or another object
 def setupFiles(Bag):
     paths = getFilePaths()
     dictionary = Dictionary.Dictionary(paths["trieFile"], paths["wordFile"], Bag)
@@ -180,6 +268,8 @@ def setupFiles(Bag):
 def getFilePaths():
     dataPath = os.getcwd() + "/Data"
     walkNames = os.walk(dataPath)
+    #print(list(walkNames)[0][2])
+    #print(list(walkNames))
     fileNames = list(walkNames)[0][2]
     regexes = {"wordFile":".*List","trieFile":".*Trie"}
     filePaths = {}
@@ -207,5 +297,27 @@ if(__name__ == "__main__"):
     dictionary, board = setupFiles(bag)
     # these would usually be passed in, maybe with a customised board layout
 
-    print("done")
-    f = Full(board, bag, dictionary)
+    imageName = "/Users/acolby/Documents/School_Work/_Computer_science/NEA-project/Scrabble/Data/Default.jpeg"
+
+    player = Player.Player("Player1", 7, bag, imageName)
+
+    weights = [["  ","  ","3w","3w","  ","  ","  ","  ","  ","  ","  ","3w","3w","  ","  "]
+              ,["  ","3w","  ","  ","  ","2w","2w","2w","2w","2w","  ","  ","  ","3w","  "]
+              ,["3w","  ","  ","2w","2w","  ","  ","  ","  ","  ","2w","2w","  ","  ","3w"]
+              ,["3w","  ","2w","  ","  ","  ","3l","3l","3l","  ","  ","  ","2w","  ","3w"]
+              ,["  ","  ","2w","  ","3l","3l","  ","  ","  ","3l","3l","  ","2w","  ","  "]
+              ,["  ","2w","  ","  ","3l","  ","2l","2l","2l","  ","3l","  ","  ","2w","  "]
+              ,["  ","2w","  ","3l","  ","2l","  ","  ","  ","2l","  ","3l","  ","2w","  "]
+              ,["  ","2w","  ","3l","  ","2l","  ","St","  ","2l","  ","3l","  ","2w","  "]
+              ,["  ","2w","  ","3l","  ","2l","  ","  ","  ","2l","  ","3l","  ","2w","  "]
+              ,["  ","2w","  ","  ","3l","  ","2l","2l","2l","  ","3l","  ","  ","2w","  "]
+              ,["  ","  ","2w","  ","3l","3l","  ","  ","  ","3l","3l","  ","2w","  ","  "]
+              ,["3w","  ","2w","  ","  ","  ","3l","3l","3l","  ","  ","  ","2w","  ","3w"]
+              ,["3w","  ","  ","2w","2w","  ","  ","  ","  ","  ","2w","2w","  ","  ","3w"]
+              ,["  ","3w","  ","  ","  ","2w","2w","2w","2w","2w","  ","  ","  ","3w","  "]
+              ,["  ","  ","3w","3w","  ","  ","  ","  ","  ","  ","  ","3w","3w","  ","  "]
+              ]
+
+    board.setWeights(weights)
+
+    f = Full(board, bag, dictionary, player)
