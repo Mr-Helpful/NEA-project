@@ -1,17 +1,20 @@
-import AI
-import Bag
-import Board
-import Database
 import Dictionary
-import Game
-import GUI
-import os
+import Database
 import Player
+import Board
+import Game
+import Bag
+import GUI
+import AI
+
+import os
 import re
 
-from Dictionary import Trie, Node
-
 '''
+Currently:
+> refactoring implementation of makeMove into Player
+> expressing passing all Game attributes through the object of Game
+
 To do:
 > Refactor implementation of makeMove into Player as much as possible.
  > Try to get it to the point where Game simply has to call the takeTurn method from Player
@@ -67,7 +70,6 @@ class Scrabble:
         return(dataPath + "/" + fileName)
 
     def exit(self, *args):
-        print("exiting")
         self.GUI.exit()
 
     def playGame(self):
