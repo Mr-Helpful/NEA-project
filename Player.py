@@ -32,40 +32,5 @@ class Player:
         nPlay.confirmed = "passed"
         return(False)
 
-    def checkValidPlay(self, changes):
-        hand = list(self.hand[:])
-        for c in changes:
-            if(c in hand):
-                hand.remove(c)
-            elif("." in hand):
-                hand.remove(".")
-            else:
-                return(False)
-        return(True)
-
-    def checkMove(self, rC, orientation, play, board):
-        boardCorrect = board.checkValidPlay(rC, orientation, play)
-        lineChanges = board.getChanges(rC, orientation, play)
-
-        if(lineChanges):
-            handCorrect = self.checkValidPlay(lineChanges)
-            if(handCorrect and boardCorrect):
-                return(True, lineChanges)
-        return(False, lineChanges)
-
-    def changeHand(self, changes, bag):
-        for change in changes:
-            self.hand.pop(changes)
-
-        newTiles = bag.getTiles(len(changes))
-        self.hand.extend(newTiles)
-
-    # returns the player's hand
-    def getHand(self):
-        return(self.hand)
-
-    def addTiles(self, newTiles):
-        pass
-
 if(__name__ == "__main__"):
     pass

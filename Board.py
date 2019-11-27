@@ -38,12 +38,6 @@ class Board:
     def setBoard(self, board):
         self.board = board
 
-    def getBoard(self):
-        return(self.board)
-
-    def setWeights(self, weights):
-        self.weights = weights
-
     def getFlippedBoard(self, board):
         flippedBoard = [[] for _ in range(len(board))]
         for y in board:
@@ -172,18 +166,6 @@ class Board:
             stack.append([r-1,c])
         return(stack)
 
-    def getCroppedBoard(self, topLeft, bottomRight, board = None):
-        if(not(board)):
-            board = self.board[:]
-
-        croppedRows = board[topLeft[1]-1:bottomRight[1]]
-
-        croppedBoard = []
-        for row in croppedRows:
-            croppedBoard.append(row[topLeft[0]-1:bottomRight[0]])
-
-        return(croppedBoard)
-
     # finds the letters which vary on the line before the play and after
     # this would likely not be necessary for the final GUI, as it would be easier to find the new letters played
     def getChanges(self, nPlay):
@@ -226,16 +208,41 @@ class Board:
         board = self.getEditedBoard(nPlay)
         self.setBoard(board)
 
+    def getAllChangedLines(self, nPlay):
+        cLines = [nPlay]
+
+        for i, char in enumerate(nPlay.changes):
+            pPlay = self.getPerpendicularPlay(nPlay, i, char)
+            if(pPlay):
+                cLines.append(pPlay)
+
+        return(cLines)
+
+    def getPerpendicularPlay(self, nPlay, i, char):
+        pPlay = copy.copy(nPlay)
+        pPlay.orientation = not(pPlay.orientation)
+        line = self.getBoardRotation(pPlay.orientation)[i]
+
+        character = pPlay.changes[i]
+
+        if(line[pPlay.rC] == char):
+            return(False)
+
+        longLine = ["."] + line + ["."]
+        if(longLine[pPlay.rC] == "." and longLine[pPlay.rC + 2] == "."):
+            return(False)
+
+        pPlay.changes = ["."]*15
+        pPlay.changes[pPlay.rC] = char
+        pPlay.rC = i
+        return(pPlay)
+
     def getScore(self, game, nPlay):
-        total = self.scoreRow(game, nPlay)
+        allPlays = self.getAllChangedLines(nPlay)
+        total = 0
 
-        for i, change in enumerate(nPlay.changes):
-            if(change != "*"):
-                dPlay = copy.copy(nPlay)
-                dPlay.orientation = int(not(dPlay.orientation))
-                dPlay.rC = i
-
-                total += self.scoreRow(game, dPlay)
+        for play in allPlays:
+            total += self.scoreRow(game, play)
 
         return(total)
 

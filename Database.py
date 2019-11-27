@@ -1,4 +1,4 @@
-# used to store game states, players, etc
+# used to store game states, players, etc
 # mostly used as all of these are modelled as objects and therefore this is just easier to use
 import pickle
 

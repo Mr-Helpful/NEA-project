@@ -24,6 +24,7 @@ To do:
  > The need for this is likely going to be low as most of the variables are passed down in this implementation
 
 > Properly comment your code!
+ > Consider using docstrings
 
 > Create a scoring system for the plays made
  > Implement this in the board class

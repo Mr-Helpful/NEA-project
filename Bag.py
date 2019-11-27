@@ -79,10 +79,6 @@ class Bag:
         bag = bag[noTiles:]
         return(tiles)
 
-    def removeTile(self, bag, tile):
-        bag.remove(tile)
-        return(tile)
-
     def checkWordInBag(self, word):
         # performs a shallow copy on self.bag
         bag = self.bag[:]

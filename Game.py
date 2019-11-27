@@ -1,6 +1,5 @@
 class Game:
     DefaultTilesPerPlayer = 7
-
     def __init__(self, players, board, bag, GUI):
         self.players = players
         self.playerScores = {player.name: 0 for player in players}
@@ -42,7 +41,8 @@ class Game:
             self.passedTurn(player)
             return()
 
-        valid = self.checkMove(player, nPlay)
+        valid = self.checkMove(player, nPlay)1
+        #valid = True
         if(valid):
             print("valid")
             score = self.board.getScore(self, nPlay)
@@ -50,19 +50,6 @@ class Game:
             self.playerScores[player.name] += score
             self.board.updateBoard(nPlay)
             self.updateHand(player, nPlay)
-
-    def tryMove(self, player):
-        player.makeMove(self)
-        check, rowColumn, orientation, play = self.GUI.makeMove(player, self)
-        if(not(check)):
-            return(True)
-
-        board = self.board.editBoard(rowColumn, orientation, play)
-        confirmed = self.GUI.confirmPlay(rowColumn, orientation, play, board, player)
-        if(confirmed):
-            player.makeMove(self.board, self.GUI, self.bag)
-            return(False)
-        return(True)
 
     # give each player the option to pass a turn. If one of them passes three consecutive turns in a row the game is over
     # this will need a method to stop players "rage quitting", when they reach a score higher than the AI and winning against it that way

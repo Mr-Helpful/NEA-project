@@ -19,6 +19,8 @@ class Dictionary:
         t1 = time.time()
         # retreives the trie for use in the program
         trie = self.readTrie(trieFiles)
+
+        # optimisation: don't do this unless trie does not exist
         words = self.readWords(wordFiles)
 
         # this if is used to check if a trie file already exists and if it does
@@ -101,9 +103,7 @@ class Dictionary:
         return(False)
 
 
-
 class Node:
-
     # defines the initialisation of a single node object
     # "" defines a root node
     def __init__(self,value):
@@ -152,7 +152,7 @@ class Tree():
 
         # if CurNode is 0
         # updates CurNode to the correct value
-        # used as self is defined in the parameters
+        # as self is defined in the parameters
         # and therefore cannot be used in default values
         if(CurNode == 0):
             CurNode = self._rootNode
@@ -173,6 +173,7 @@ class Trie(Tree):
 
         # defines the character used to end a word
         EOW = ")"
+
 
         def findChild(self, node, char):
             # firstly defines charCheck as False
@@ -207,6 +208,7 @@ class Trie(Tree):
             # otherwise it isn't
             return(False)
 
+
         # stores an entire word in the trie
         # makes use of the self.add_child() method
         def storeWord(self, word):
@@ -234,6 +236,7 @@ class Trie(Tree):
                     root = charCheck
             endNode = Node(self.EOW)
             root.children.append(endNode)
+
 
         # allows for storage of a list of words at once
         def storeWords(self, words):
@@ -341,7 +344,7 @@ class Trie(Tree):
                     frames.extend(newFrames)
 
             # replaces the children of the current node
-            # used in order to prune the tree
+            # in order to prune the tree
             children = [frame[0] for frame in frames]
             node.children = children
 

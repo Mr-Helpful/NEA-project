@@ -5,6 +5,7 @@ import os
 import Dictionary
 import Player
 import Board
+import copy
 import Play
 import Bag
 
@@ -116,7 +117,8 @@ class MVP:
                 return(menu[choice])
 
 class Draggable:
-    def __init__(self, object, snapCoords, snapRadius):
+    def __init__(self, Window, object, snapCoords, snapRadius):
+        self.Window = Window
         self.dragObject = object
 
         # determines whether the object is being dragged
@@ -124,12 +126,18 @@ class Draggable:
         self.currentCoords = [0,0]
         self.snapCoords = snapCoords
         self.snapRadius = snapRadius
-        self.make_draggable(object)
+        self.make_draggable()
 
-    def make_draggable(self, widget):
-        widget.bind("<Button-1>", self.toggle_drag)
-        widget.bind("<Motion>", self.on_drag_motion)
-        widget.bind("<Button-2>", self.holdup)
+    def make_draggable(self):
+        self.dragObject.bind("<Button-1>", self.toggle_drag)
+        self.dragObject.bind("<Motion>", self.on_drag_motion)
+
+    def remove_drag(self):
+        self.dragObject.unbind("<Button-1>")
+        self.dragObject.unbind("<Motion>")
+
+    def blank_function(self):
+        pass
 
     def toggle_drag(self, event):
 
@@ -137,6 +145,7 @@ class Draggable:
         self.dragging = not(self.dragging)
         widget = self.dragObject
         if(self.dragging):
+            self.dragObject.lift()
             widget._drag_start_x = event.x
             widget._drag_start_y = event.y
 
@@ -149,6 +158,8 @@ class Draggable:
             if(minD < self.snapRadius ** 2):
                 p = distances[minD]
                 widget.place(x = p[0], y = p[1])
+                self.currentCoords[0] = p[0]
+                self.currentCoords[1] = p[1]
 
     def on_drag_motion(self, event):
         if(self.dragging):
@@ -159,33 +170,85 @@ class Draggable:
             self.currentCoords[1] = y
             widget.place(x = x, y = y)
 
-    def holdup(self, event):
-        cont = input("try me!")
-        print("done")
+class Tile:
+    def __init__(self, Window, Bag, snapCoords, snapRadius, letter = "_", score = "0", x = 0, y = 0):
+        self.Window = Window
+        self.snapCoords = snapCoords
+        self.snapRadius = snapRadius
+        self.letter = letter
+        self.score = Bag.scores[self.letter]
+        self.buildTile(x, y)
+
+    def buildTile(self, x, y):
+        frm = Frame(self.Window, relief = "raised", borderwidth = 3, width = 50, height = 50)
+        frm.place(x = x, y = y)
+
+        msg = Label(frm, text = self.letter, font = ("Helvetica", 25), width = 1, height = 1)
+        msg.place(x = 11, y = 3)
+        self.linkEvents(msg, frm)
+
+        msg = Label(frm, text = self.score, font = ("Helvetica", 10), width = 1, height = 1)
+        msg.place(x = 32, y = 27)
+        self.linkEvents(msg, frm)
+
+        self.Drag = Draggable(self.Window, frm, self.snapCoords, self.snapRadius)
+
+        self.widget = frm
+
+    def fixPlace(self):
+        self.widget.unbind("<Button-1>")
+        self.widget.unbind("<Motion>")
+
+    def linkEvents(self, child, parent):
+        bindtags = list(child.bindtags())
+        bindtags.insert(1, parent)
+        child.bindtags(tuple(bindtags))
+
+    def getCoords(self):
+        return(self.Drag.currentCoords)
+
+    def delete(self):
+        self.widget.destroy()
 
 class Full:
-    def __init__(self, Board, Bag, Dictionary, Player):
+    def __init__(self, board, Bag, Dictionary, Players, PlayerHands):
         self.Window = Toplevel()
 
+        print("initialising variables")
+        self.Board = board
+        self.Bag = Bag
+        self.Dictionary = Dictionary
+        self.Players = Players
+        self.PlayerHands = PlayerHands
+        self.initVariables()
+
         print("building GUI")
-        self.buildGUI(Board, Player)
+        self.buildGUI()
 
         print("running GUI")
         self.runGUI()
 
-    def buildGUI(self, Board, Player):
+    def initVariables(self):
+        self.boardSnaps = []
+        self.handTiles = []
+        self.boardTiles = []
+        self.currentPlayer = list(self.Players.keys())[0]
+
+    def buildGUI(self):
         size = 50
         self.Window.title("Tile testing")
         self.Window.config(background = "#ececec")
-        self.Window.config(width = 1000, height = 850)
-        snapCoords = self.createBoard(Board)
-        self.addPicture(Player)
-        self.addDetails(Player)
-        self.buildTiles(snapCoords)
+        self.Window.config(width = 1100, height = 850)
+        self.createBoard()
+        self.addPicture()
+        self.addDetails()
+        self.buildTiles()
+        self.addSwapHand()
 
-    def createBoard(self, Board):
+    def createBoard(self):
         bg = Frame(self.Window, bg = "#000000", width = 788, height = 788)
         bg.place(x = 5, y = 5)
+        bg.lower()
 
         colours = {"2l":"#b2c6e9",
                    "3l":"#446bc7",
@@ -194,23 +257,22 @@ class Full:
                    "St":"#ffb381",
                    "  ":"#ffffff"}
 
-        snapCoords = []
         size = 50
         offset = 10
 
         for x in range(15):
             for y in range(15):
                 newCoords = [offset + (size + 2) * x, offset + (size + 2) * y]
-                snapCoords.append(newCoords)
+                self.boardSnaps.append(newCoords)
 
-                weight = Board.weights[y][x]
-                sqr = Frame(self.Window, width = size, height = size, bg = colours[weight])
-                sqr.place(x = newCoords[0], y = newCoords[1])
+                weight = self.Board.weights[y][x]
+                sqr = Frame(bg, width = size, height = size, bg = colours[weight])
+                sqr.place(x = newCoords[0] - 5, y = newCoords[1] - 5)
 
-        return(snapCoords)
+        self.boardLayout = bg
 
-    def addPicture(self, Player):
-        imageName = Player.imageName
+    def addPicture(self):
+        imageName = self.currentPlayer.imageName
         photo = Image.open(imageName)
         img = ImageTk.PhotoImage(photo)
 
@@ -221,34 +283,53 @@ class Full:
         panel.image = img
         panel.place(x = 800, y = 5)
 
-    def addDetails(self, Player):
-        msg = Message(self.Window, text = Player.name)
+    def addDetails(self):
+        frm = Frame(self.Window, width = 225, height = 50)
+        frm.place(x = 800, y = 250)
 
-    def buildTiles(self, snapCoords):
-        snapRadius = 20
-        startX = 10
-        startY = 10
-        for _ in range(15):
-            self.addTile(snapCoords, snapRadius, x = startX, y = startY)
+        msg = Label(frm, text = self.currentPlayer.name, font = ("Helvetica",25), bg = "#ececec")
+        msg.pack(side=RIGHT)
 
-    def addTile(self, snapCoords, snapRadius, Letter = "_", Score = 10, x = 0, y = 0):
-        frm = Frame(self.Window, relief = "raised", borderwidth = 3, width = 50, height = 50)
-        frm.place(x = x, y = y)
+    def buildTiles(self):
+        snapRadius = 26
+        startX = 800
+        startY = 310
+        tiles = self.PlayerHands[self.currentPlayer.name]
+        for tile in tiles:
+            allCoords = self.boardSnaps + [[startX, startY]]
 
-        msg = Label(frm, text = Letter, font = ("Helvetica", 25), width = 1, height = 1)
-        msg.place(x = 11, y = 3)
-        self.linkEvents(msg, frm)
+            newTile = Tile(self.Window, self.Bag, allCoords, snapRadius, tile, x = startX, y = startY)
+            self.handTiles.append(newTile)
+            startX += 50
 
-        msg = Label(frm, text = Score, font = ("Helvetica", 10), width = 1, height = 1)
-        msg.place(x = 32, y = 27)
-        self.linkEvents(msg, frm)
+    def addSwapHand(self):
+        msg = Message(self.Window, text = "Swap the Hands")
+        msg.bind("<Button-1>", self.swapHand)
+        msg.place(x = 800, y = 400)
 
-        Draggable(frm, snapCoords, snapRadius)
+    def findTilesOnBoard(self):
+        for tile in self.handTiles:
+            coords = tile.getCoords()
+            if(coords in self.boardSnaps):
+                tile.fixPlace()
+                self.boardSnaps.remove(coords)
+                self.handTiles.remove(tile)
+                self.boardTiles.append(tile)
+                hand = self.PlayerHands[self.currentPlayer.name]
+                hand.remove(tile.letter)
 
-    def linkEvents(self, child, parent):
-        bindtags = list(child.bindtags())
-        bindtags.insert(1, parent)
-        child.bindtags(tuple(bindtags))
+    def swapHand(self, event):
+        self.findTilesOnBoard()
+        self.delHand()
+
+        nextPlayer = self.Players[self.currentPlayer]
+        self.currentPlayer = nextPlayer
+
+        self.buildTiles()
+
+    def delHand(self):
+        for tile in self.handTiles:
+            tile.delete()
 
     def runGUI(self):
         self.Window.mainloop()
@@ -299,7 +380,21 @@ if(__name__ == "__main__"):
 
     imageName = "/Users/acolby/Documents/School_Work/_Computer_science/NEA-project/Scrabble/Data/Default.jpeg"
 
-    player = Player.Player("Player1", 7, bag, imageName)
+    players = []
+    players.append(Player.Player("Player1", 7, bag, imageName))
+    players.append(Player.Player("Player2", 7, bag, imageName))
+
+    nPlayer = {}
+    for i in range(len(players)):
+        p1 = players[i-1]
+        p2 = players[i]
+        nPlayer[p1] = p2
+
+    playerHands = {}
+    for p in nPlayer.keys():
+        playerHands[p.name] = bag.getTiles(7)
+
+    print(playerHands)
 
     weights = [["  ","  ","3w","3w","  ","  ","  ","  ","  ","  ","  ","3w","3w","  ","  "]
               ,["  ","3w","  ","  ","  ","2w","2w","2w","2w","2w","  ","  ","  ","3w","  "]
@@ -318,6 +413,9 @@ if(__name__ == "__main__"):
               ,["  ","  ","3w","3w","  ","  ","  ","  ","  ","  ","  ","3w","3w","  ","  "]
               ]
 
-    board.setWeights(weights)
+    boardTwo = copy.copy(board)
+    boardTwo.weights = weights
 
-    f = Full(board, bag, dictionary, player)
+    player = Player.Player("Player1", 7, bag, imageName)
+
+    f = Full(board, bag, dictionary, nPlayer, playerHands)
