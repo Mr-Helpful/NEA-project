@@ -41,7 +41,7 @@ class Game:
             self.passedTurn(player)
             return()
 
-        valid = self.checkMove(player, nPlay)1
+        valid = self.checkMove(player, nPlay)
         #valid = True
         if(valid):
             print("valid")

@@ -210,9 +210,9 @@ class Tile:
     def delete(self):
         self.widget.destroy()
 
-class Full:
+class GameScreen:
     def __init__(self, board, Bag, Dictionary, Players, PlayerHands):
-        self.Window = Toplevel()
+        self.Window = Tk()
 
         print("initialising variables")
         self.Board = board
@@ -334,6 +334,95 @@ class Full:
     def runGUI(self):
         self.Window.mainloop()
 
+class mainMenu:
+    def __init__(self):
+        self.Window = Tk()
+        self.buildMenu()
+        self.runMenu()
+
+    def buildMenu(self):
+        btn1 = Message(self.Window, text = "Play a game", width = 100)
+        btn1["bg"] = "white"
+        btn1.bind("<Button-1>", self.newGame)
+        btn1.pack(side = LEFT)
+        btn1.place(x = 50, y = 50)
+
+        btn2 = Message(self.Window, text = "Read the rules", width = 100)
+        btn2["bg"] = "white"
+        btn2.bind("<Button-1>", self.readRules)
+        btn2.pack(side = LEFT)
+        btn2.place(x = 50, y = 100)
+
+        btn3 = Message(self.Window, text = "Quit the app", width = 100)
+        btn3["bg"] = "white"
+        btn3.bind("<Button-1>", self.quit)
+        btn3.pack(side = LEFT)
+        btn3.place(x = 50, y = 150)
+
+    def newGame(self, event):
+        pass
+
+    def readRules(self, event):
+        # doesn't need to initiate a variable as the window will act on its own
+        rulesBox("Rules")
+
+    def linkEvents(self, child, parent):
+        bindtags = list(child.bindtags())
+        bindtags.insert(1, parent)
+        child.bindtags(tuple(bindtags))
+
+    def quit(self, event):
+        self.Window.destroy()
+
+    def runMenu(self):
+        self.Window.mainloop()
+
+class rulesBox:
+    def __init__(self, name):
+        self.root = Toplevel()
+        self.root.title(name)
+        self.buildScrollBox()
+        self.addElements()
+
+    def buildScrollBox(self):
+        frame=Frame(self.root,width=300,height=300)
+        frame.place(x=10, y=10)
+        frame.config(relief = "ridge", borderwidth = 3)
+        self.frm=Frame(frame,bg='#FFFFFF',width=300,height=300,scrollregion=(0,0,300,1000))
+        self.frm.bind_all("<MouseWheel>", self.wheel)
+
+        vbar=Scrollbar(frame,orient=VERTICAL)
+        vbar.pack(side=RIGHT,fill=Y)
+        vbar.config(command=self.frm.yview)
+        self.linkEvents(self.frm, frame)
+
+        self.frm.config(yscrollcommand=vbar.set)
+        self.frm.pack(side=LEFT,expand=True,fill=BOTH)
+
+    def addElements(self):
+        self.addText()
+        self.addGif()
+        self.addPictures()
+
+    def addText(self):
+        txt = '''The game of Scrabble can be played by (not currently) 2-4 players'''
+        txt1 = Message(self.frm, text)
+        txt1.place(x=5, y=5)
+
+    def addGif(self):
+        pass
+
+    def addPictures(self):
+        pass
+
+    def wheel(self, event):
+        self.canvas.yview_scroll(-event.delta, "units")
+
+    def linkEvents(self, child, parent):
+        bindtags = list(child.bindtags())
+        bindtags.insert(1, parent)
+        child.bindtags(tuple(bindtags))
+
 '''
 Testing
 -------------------------------------------------------
@@ -418,4 +507,5 @@ if(__name__ == "__main__"):
 
     player = Player.Player("Player1", 7, bag, imageName)
 
-    f = Full(board, bag, dictionary, nPlayer, playerHands)
+    #f = GameScreen(board, bag, dictionary, nPlayer, playerHands)
+    m = mainMenu()
