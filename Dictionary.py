@@ -12,7 +12,7 @@ import Bag
 class Dictionary:
     dataFolder = "Data"
     def __init__(self, trieFile, wordFile, bag):
-        self.writeTrie = "/Users/acolby/Documents/School_Work/_Computer_science/NEA-project/Scrabble/Data/WordTrie"
+        self.writeTrie = "/Users/acolby/Documents/School_Work/_Computer_science/NEA-project/Scrabble/Data/"
         self.trie = self.retrieveDict(trieFile, wordFile, bag)
 
     def retrieveDict(self, trieFiles, wordFiles, bag):
@@ -37,7 +37,7 @@ class Dictionary:
             # finally it stores the newly made trie in the trieFile to make booting
             # faster next time
             # on average, this leads to a time save factor of 6.3*
-            self.storeTrie(trie)
+            self.storeTrie(trie, trieFiles)
 
         # if neither a trieFile or a wordFile can be found, it throws an error
         else:
@@ -60,8 +60,7 @@ class Dictionary:
             if(not(bag.checkWordInBag(word))):
                 words.remove(word)
 
-        trie = Trie()
-        trie.storeWords(words)
+        trie = Trie(15, words)
         return(trie)
 
     def readWords(self, wordFiles):
@@ -86,38 +85,21 @@ class Dictionary:
                 pass
         return(False)
 
-    def storeTrie(self, trie):
-        trieFile = self.writeTrie
-        with open(trieFile, "wb") as f:
+    def storeTrie(self, trie, trieFile):
+        with open(trieFile[0], "wb") as f:
             # uses pickle to store the trie once converted
             pickle.dump(trie, f)
 
     def checkForWord(self, word):
         # checks if a word is present within the trie structure
-        nodes = self.trie.checkForWord(word)
-        if(nodes):
-            for node in nodes:
-                for c in node.children:
-                    if(c.value == self.trie.EOW):
-                        return(True)
-        return(False)
+        return(self.trie.checkForWord(word))
 
 
 class Node:
     # defines the initialisation of a single node object
-    # "" defines a root node
-    def __init__(self,value):
-
-        # defines the value of the node
-        # will either be defined as an alphabetic character
-        # or an empty string for the root Tree object
-        # the end of the word node's value is defined as the EOW character
-        # end of word node have node children connected to it
-        self.value = value
-
-        # defines the children of the Node
-        # this will be used to move through the tree
-        self.children = []
+    # "." defines a root node
+    def __init__(self):
+        self.children = {}
 
 # defines a node used to construct a trees
 # this will later be used to construct a trie
@@ -140,7 +122,7 @@ class Tree():
     def __init__(self):
 
         # defines the root Node of the tree as a Node with value ""
-        self._rootNode = Node(".")
+        self._rootNode = Node()
 
     # prints the entire trie connected to the node from which this method is called
     # mostly used for debug version
@@ -148,7 +130,7 @@ class Tree():
     # due to the fact that it uses a lot of printing
     # setting CurNode and starter to 0 is used as a flag that these need to be updated
     # this is required as they can't be defaulted to a value relating to self as this hasn't been recognised yet
-    def print_tree(self,CurNode = 0,starter = 0):
+    def printTree(self,CurNode = 0,starter = 0):
 
         # if CurNode is 0
         # updates CurNode to the correct value
@@ -161,60 +143,58 @@ class Tree():
         if(starter == 0):
             starter = self.startTree
 
-        # prints out the branch of the tree
-        print(starter + CurNode.value)
-
         # calls itself on every node in the current node's children
-        for node in CurNode.children:
-            self.print_tree(node," |"+starter)
+        for key, node in CurNode.children.items():
+            print(starter + key)
+            self.printTree(node," |"+starter)
 
 # defines a Trie
 class Trie(Tree):
 
+        # defines the character used to start a word
+        SOW = "("
+
         # defines the character used to end a word
         EOW = ")"
 
+        # defines the character used to start the trie from the beginning
+        repeatChar = "§"
+
+        def __init__(self, trieSize, words):
+            self._rootNode = Node()
+            self._startNode = Node()
+
+            self._rootNode.children["("] = self._startNode
+            self.setup(trieSize, words)
 
         def findChild(self, node, char):
-            # firstly defines charCheck as False
-            # this will remain the value of charcheck if it fails to find the relevant node
-            charCheck = False
-
-            # iterates over the current node's children
-            for Cnode in node.children:
-
-                # checks if the value of the node fits the character being searched for
-                if(Cnode.value == char):
-
-                    # if so it updates the value of charCheck to the node conataining this character
-                    # it is formatted as a list for ease of use later
-                    charCheck = [Cnode]
 
             # if the value is blank it returns all of the children
             if(char == "."):
-                return(node.children)
+                return(node.children.values())
 
-            return(charCheck)
+            # the .get method is used here instead of just indexing the dictionary
+            # this is because if the item does not exist in the dictionary it will return None
+            val = node.children.get(char)
+
+            # when forced to a boolean (used in if statements) None becomes False
+            # therefore val can simply be returned here
+            return(val)
 
         # checks if a node contributes the end of a word
         def checkEnd(self,node):
 
-            # if the node is attached to an EOW node
-            if(self.findChild(node,self.EOW)):
+            # returns True only if None is not returned from findChild
+            val = bool(self.findChild(node, self.EOW))
 
-                # it can be considered the end of the word
-                return(True)
-
-            # otherwise it isn't
-            return(False)
-
+            return(val)
 
         # stores an entire word in the trie
         # makes use of the self.add_child() method
         def storeWord(self, word):
 
             # root is the node object currently being worked on
-            root = self._rootNode
+            root = self._startNode
 
             # goes through each character in the word
             for char in word:
@@ -227,158 +207,221 @@ class Trie(Tree):
                 if(not(charCheck)):
 
                     # if no node object exists, it creates a new node object to store the word
-                    newNode = Node(char)
-                    root.children.append(newNode)
+                    newNode = Node()
+                    root.children[char] = newNode
                     root = newNode
                 else:
 
                     # otherwise it will just navigate down that node
                     root = charCheck
-            endNode = Node(self.EOW)
-            root.children.append(endNode)
+            endNode = Node()
+            root.children[self.EOW] = endNode
 
 
         # allows for storage of a list of words at once
-        def storeWords(self, words):
+        def storeWords(self, trieSize, words):
+            nWords = []
 
             # iterates through words and calls storeWord() on each one
             for word in words:
-                self.storeWord(word)
+                if(len(word) >= trieSize):
+                    self.storeWord(word)
+                    nWords.append(word)
+
+            return(nWords)
+
+        # defines the function used to populate and format the trie
+        def setup(self, trieSize, words):
+            words = self.storeWords(trieSize, words)
+            print("trie with size {} set up".format(trieSize))
+
+            # if the trie does not comprise of only one letter words
+            # then it will create a new trie and add it to itself
+            # however this trie will be one branch shorter
+            if(trieSize != 1):
+                newTrie = Trie(trieSize - 1, words)
+                self._rootNode.children["§"] = newTrie._rootNode
+                pass
 
         # returns a list of all the words stored within the tree
+        # this represents a somewhat depth first search of the trie
+        # the trie will also never be more than 15 items deep
+        # due to these two reasons the depth of the call stack for this recursive implementation
+        # will never be more than 15 frames and the recursion is unlikely to ever cause an error.
         def retrieveWords(self, node = 0, string = ""):
 
-            # self._rootNode cannot be used as a default
-            # so this represents a hack to set it as default
+            # self._startNode cannot be used as a default
+            # so this represents a hack to set it as a default
             if(node == 0):
-                node = self._rootNode
-
-            # if it encounters an end of word character, it will return the finished string
-            if(node.value == self.EOW):
-                return(string)
-
-            # builds up a string using the previous part of the string and the character stored at the node
-            newString = string + node.value
+                node = self._startNode
 
             # sets up the empty wordlist at the start and fills it using recursion
             wordList = []
-            for child in node.children:
 
-                # passes the implementation down the layers
-                wordList.extend(self.retrieveWords(child,newString))
+            for key, value in node.children.items():
+
+                # if a word has a EOW character connected to it, we add it to the wordList
+                if(key == self.EOW):
+                    wordList.append(string)
+
+                # an else is used as we don't want the function to consider the branches off of EOW characters
+                else:
+                    # builds up a string using the previous part of the string and the character stored at the node
+                    newString = string + key
+
+                    # passes the implementation down the layers
+                    wordList.extend(self.retrieveWords(child,newString))
 
             # passes the extended wordList up the layers
             return(wordList)
 
-        # gives an efficient method for searching for a word within the Trie
-        def checkForWord(self, word):
-            # stores all the nodes being processed
-            nodes = [self._rootNode]
+        def negateRow(self, row):
+            nRow = list("abcdefghijklmnopqrstuvwxyz") + [self.SOW, self.EOW, self.repeatChar]
+            for item in row:
+                nRow.remove(item)
 
-            for char in word:
-                newNodes = []
-                for node in nodes:
-                    if(self.findChild(node,char)):
-                        newNodes.extend(self.findChild(node,char))
-                nodes = newNodes
+            return(nRow)
 
-            nodes = [node for node in nodes if(self.checkEnd(node))]
-            if(len(nodes) == 0):
-                return(False)
-            return(nodes)
+        def translateRow(self, row):
+            # replaces each item in the row with its equivalent list of valid letters
+            # ignores lists already in the string
+
+            nRow = []
+            for r in row:
+                if(type(r) == type([])):
+                    nRow.append(r)
+                elif(r == "."):
+                    nRow.append(list("abcdefghijklmnopqrstuvwxyz") +  # the standard alphabet
+                                [self.SOW, self.EOW, self.repeatChar])# and special characters
+                else:
+                    nRow.append([r])
+
+            nRow = self.negateRow(nRow)
+            return(nRow)
+
+        def removeBranches(self, node, unuseable):
+            newNode = copy.copy(node)
+
+            for item in unuseable:
+                try:
+                    del newNode.children[item]
+                except KeyError:
+                    pass
+
+            return(newNode)
 
         # prunes the tree to only represent letters present in the hand and row
         # this allows a simpler approach to finding the plays that work for the row
         # idea from: https://www.cs.cmu.edu/afs/cs/academic/class/15451-s06/www/lectures/scrabble.pdf
-        def pruneTree(self, letters, ordered = 0):
-            newNodes = copy.copy(self._rootNode)
+        # for a similar reason to the word retrieval algorithm this method can be recursive
+        def pruneForRow(self, row, node = 0):
+            if(node == 0):
+                node = copy.copy(self._rootNode)
 
-            # initialises the stack with the copy of the rootNode and the letters used
-            stack = [[newNodes,letters]]
+            if(len(row) == 0):
+                return()
 
-            # only stops when it fully empties the stack
-            while(len(stack) != 0):
+            fItem = row.pop(0)
+            node = self.removeBranches(node, fItem)
 
-                # pops the first frame off of the stack
-                frame = stack.pop(0)
+            for child in node.children.values():
+                self.pruneTree(row, child)
 
-                # processes it and adds the new frames returned to the
-                newFrames = self.processFrame(frame, ordered)
-                stack.extend(newFrames)
+            # removes any items that aren't in the list from the children of the trie
+            # this occurs at each branch
 
-            return(newNodes)
+            return(node)
 
+        def pruneSubTrie(self, node, hand):
 
-        # processes a single frame from pruneTree
-        def processFrame(self, frame, ordered):
+            # this represents the base case
+            # the multiplication acts as an OR gate
+            # the only nodes for which the length of node.children is 0 are the EOW nodes
+            if(len(hand) * len(node.children) == 0):
+                return()
 
-            # defines the parts of the frame being processed
-            [node, letters] = frame
+            # removing all duplicates from the hand ensures we do not get equivalent calls
+            # this reduces the amount of processing required
+            sHand = set(hand)
 
-            # if the letters are supposed to be removed in order
-            if(ordered):
+            # called can be a dictionary as they exhibit a similar behavior to sets
+            # this is needed as there may be some overlap between the called items
+            # for example: "." would cause "a" to be called, as would "a"
+            # this is also useful as it is the format used to store the nodes
+            called = {}
 
-                # only the first letter is processed
-                letters = letters[0]
+            # this preserves an EOW character if one is present in the children
+            # otherwise it would be removed by the algorithm
+            end = self.findChild(node, self.EOW)
+            if(end):
+                called[self.EOW] = end
 
-            # removes all duplicates from the letters
-            letters = list(set(letters))
+            for tiles in sHand:
+                for tile in tiles:
+                    # checks if children are present for the particular node and letter tile
+                    children = self.findChild(node, tile)
 
-            # initiates the new frames to be added to the stack, to be filled later
-            frames = []
-            for letter in letters:
+                    # if children exist for this specific letter tile
+                    # then it processes the children
+                    if(children):
 
-                # creates a shallow copy
-                # this prevents it from interfering with the list from the frame
-                cLetters = copy.copy(letters)
-                cLetters.remove(letter)
+                        # creates a shallow copy of hand, so that it is not edited by the remove operation
+                        newHand = hand[:]
+                        # this creates the variable newHand, which is the hand variable with the tile subtracted from it
+                        newHand.remove(tile)
 
-                # gets all the nodes with the correct letter(s) associated to it
-                nodes = findChild(node,letter)
+                        for child in children:
+                            # the recursive aspect
+                            self.pruneSubTrie(child, newHand)
 
-                # checks if there are any nodes to follow
-                if(nodes):
+                            # adds the child to the dictionary of called nodes
+                            called[tile] = child
 
-                    # and creates a new frame for each one
-                    newFrames = [[node,cLetters] for node in nodes]
-                    frames.extend(newFrames)
+            # this, in effect, removes all the children of the trie that weren't called during this operation
+            node.children = called
 
-            # replaces the children of the current node
-            # in order to prune the tree
-            children = [frame[0] for frame in frames]
-            node.children = children
+        def getSubTries(self, node):
+            node = node.children["§"]
+            nodes = [node]
 
-            # returns the, filled, new frames
-            return(frames)
+            while(node):
+                node = node.children["§"]
+                nodes.append(node)
 
-        # removes parts of the tree which do not represent full words
-        def clipTree(self, node):
+            return(nodes)
 
-            # iterates through children, if there are any
-            for child in children:
-                self.clipTree(child)
+        def pruneForHand(self, node, hand):
+            subTries = self.getSubTries(root)
 
-            # if there isn't a continuation to the word, or an end to it
-            if(len(node.children) == 0):
+            for subTrie in self._subTries:
+                self.pruneSubTrie(subTrie, hand)
 
-                # it'll delete the node
-                del node
+        def checkForWord(self, word, node = 0):
+            if(node == 0):
+                node = self._startNode
 
-            pass
+            if(len(word) == 0):
+                return(self.checkEnd(node))
 
+            letter = word[0]
+            word = word[1:]
+            newNode = self.findChild(node, letter)
+            if(newNode):
+                return(self.checkForWord(word, newNode))
+            return(False)
 
-        def fitRow(self, Row, Hand = ".e.ar.."):
+        def fitRow(self, row, hand = ".e.ar.."):
+            '''
+            This needs a major rewrite!
+            '''
+            # this formats both the row and the hand correctly for the pruning algorithms
+            row = self.translateRow(row)
+            row = self.negateRow(row)
 
-            # defines the node to be constructed from
-            node = self._rootNode
-
-            # prunes the tree using the player's hand
-            node = self.pruneTree(node, Hand)
+            hand = self.translateRow(hand)
 
             # prunes the tree using the row on the board
-            node = self.pruneTree(node, Row, ordered = 1)
-
-            self.clipTree(node)
+            node = self.pruneForRow(Row)
 
             # retrieves all the possible words from this new tree
             Solutions = self.retrieveWords(node)
@@ -389,8 +432,11 @@ if(__name__ == "__main__"):
     # testing code here
     b = Bag.Bag()
 
-    wordFile = "WordList"
-    trieFile = "WordTrie"
+    writeTrie = "/Users/acolby/Documents/School_Work/_Computer_science/NEA-project/Scrabble/Data/"
+    wordFile = [writeTrie + "WordList"]
+    trieFile = [writeTrie + "WordTrie"]
     d = Dictionary(trieFile, wordFile, b)
-    w = d.checkForWord("Zyzzogeton")
-    print(w)
+    w = d.checkForWord("zomotherapeutic")
+    print("The word exists" if(w) else "No word matches")
+
+    words = d.fitRow("...f...s.a.....")
